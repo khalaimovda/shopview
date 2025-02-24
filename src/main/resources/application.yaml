@@ -1,0 +1,7 @@
+spring:
+  application:
+    name: shopview
+  datasource:
+    url: jdbc:postgresql://localhost:5432/shop
+    username: username
+    password: password
