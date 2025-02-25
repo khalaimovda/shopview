@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.8.xsd">
+
+    <changeSet id="3" author="khalaimovda">
+        <preConditions onFail="HALT">
+            <and>
+                <not>
+                    <tableExists tableName="orders" />
+                </not>
+                <dbms type="postgresql"/>
+            </and>
+        </preConditions>
+        <createTable tableName="orders">
+            <column name="id" type="int" autoIncrement="true">>
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="is_active" type="boolean" defaultValueBoolean="true">
+                <constraints nullable="true"/>
+            </column>
+        </createTable>
+        <rollback>
+            <dropTable tableName="orders"/>
+        </rollback>
+    </changeSet>
+    <changeSet id="4" author="khalaimovda">
+        <preConditions onFail="HALT">
+            <and>
+                <tableExists tableName="orders" />
+                <dbms type="postgresql"/>
+            </and>
+        </preConditions>
+        <!-- Can't create index with condition using xml -->
+        <sql>
+            CREATE UNIQUE INDEX unique_active_order ON orders (is_active) WHERE is_active = TRUE;
+        </sql>
+        <rollback>
+            <sql>
+                DROP INDEX unique_active_order;
+            </sql>
+        </rollback>
+    </changeSet>
+
+</databaseChangeLog>

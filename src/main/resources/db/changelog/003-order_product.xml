@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.8.xsd">
+
+    <changeSet id="5" author="khalaimovda">
+        <preConditions onFail="HALT">
+            <and>
+                <tableExists tableName="products" />
+                <tableExists tableName="orders" />
+                <not>
+                    <tableExists tableName="order_product" />
+                </not>
+                <dbms type="postgresql"/>
+            </and>
+        </preConditions>
+        <createTable tableName="order_product">
+            <column name="order_id" type="int">
+                <constraints nullable="false" foreignKeyName=""/>
+            </column>
+            <column name="product_id" type="int">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <addPrimaryKey
+            tableName="order_product"
+            columnNames="order_id, product_id"
+            constraintName="pk_order_product"
+        />
+        <addForeignKeyConstraint
+            constraintName="fk_order_product_order"
+            baseTableName="order_product"
+            baseColumnNames="order_id"
+            referencedTableName="orders"
+            referencedColumnNames="id"
+            onDelete="CASCADE"
+        />
+        <addForeignKeyConstraint
+            constraintName="fk_order_product_product"
+            baseTableName="order_product"
+            baseColumnNames="product_id"
+            referencedTableName="products"
+            referencedColumnNames="id"
+            onDelete="RESTRICT"
+        />
+
+        <rollback>
+            <dropTable tableName="order_product"/>
+        </rollback>
+    </changeSet>
+</databaseChangeLog>
