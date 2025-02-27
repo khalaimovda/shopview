@@ -17,11 +17,14 @@
             </and>
         </preConditions>
         <createTable tableName="order_product">
-            <column name="order_id" type="int">
+            <column name="order_id" type="bigint">
                 <constraints nullable="false" foreignKeyName=""/>
             </column>
-            <column name="product_id" type="int">
+            <column name="product_id" type="bigint">
                 <constraints nullable="false"/>
+            </column>
+            <column name="count" type="int" defaultValue="1">
+                <constraints nullable="false" />
             </column>
         </createTable>
 
@@ -46,9 +49,27 @@
             referencedColumnNames="id"
             onDelete="RESTRICT"
         />
-
         <rollback>
             <dropTable tableName="order_product"/>
+        </rollback>
+    </changeSet>
+    <changeSet id="6" author="khalaimovda">
+        <!-- <constraints checkConstraint="count > 0"/> doesn't work -->
+        <preConditions onFail="HALT">
+            <and>
+                <tableExists tableName="order_product" />
+                <dbms type="postgresql"/>
+            </and>
+        </preConditions>
+        <sql>
+            ALTER TABLE order_product
+            ADD CONSTRAINT check_order_product_count_positive CHECK (count > 0);
+        </sql>
+        <rollback>
+            <sql>
+                ALTER TABLE order_product
+                DROP CONSTRAINT check_order_product_count_positive;
+            </sql>
         </rollback>
     </changeSet>
 </databaseChangeLog>
