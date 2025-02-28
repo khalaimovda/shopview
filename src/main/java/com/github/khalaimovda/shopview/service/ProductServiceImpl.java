@@ -15,6 +15,7 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     public Page<Product> getAllProducts(String contentSubstring, Pageable pageable) {
-        return productRepository.findAllByNameContainingOrDescriptionContaining(contentSubstring, contentSubstring, pageable);
+        return productRepository.findAllByNameContainingIgnoreCaseOrDescriptionContainingIgnoreCase(
+            contentSubstring, contentSubstring, pageable);
     }
 }

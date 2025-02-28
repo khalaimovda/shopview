@@ -9,6 +9,9 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface ProductRepository extends JpaRepository<Product, Long> {
 
-    // todo: независимо от регистра
-    Page<Product> findAllByNameContainingOrDescriptionContaining(String name, String description, Pageable pageable);
+    Page<Product> findAllByNameContainingIgnoreCaseOrDescriptionContainingIgnoreCase(
+        String name,
+        String description,
+        Pageable pageable
+    );
 }
