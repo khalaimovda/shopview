@@ -3,16 +3,18 @@ package com.github.khalaimovda.shopview.model;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Min;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Entity
 @Table(name = "order_product")
 @Getter
 @Setter
+@NoArgsConstructor
 public class OrderProduct {
 
     @EmbeddedId
-    private OrderProductId id;
+    private OrderProductId id = new OrderProductId();
 
     @ManyToOne
     @MapsId("orderId")

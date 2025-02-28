@@ -7,3 +7,10 @@ spring:
     password: password
   liquibase:
     change-log: "classpath:/db/changelog/db.changelog-master.xml"
+
+  # Show sql
+  jpa:
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true

@@ -1,7 +1,7 @@
 package com.github.khalaimovda.shopview.controller;
 
 
-import com.github.khalaimovda.shopview.model.Product;
+import com.github.khalaimovda.shopview.dto.ProductListResponseDto;
 import com.github.khalaimovda.shopview.service.ProductService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -27,7 +27,7 @@ public class ProductController {
         @PageableDefault(sort = "id", direction = Sort.Direction.DESC) Pageable pageable,
         @RequestParam(value = "search", defaultValue = "") String search
     ) {
-        Page<Product> page = productService.getAllProducts(search, pageable);
+        Page<ProductListResponseDto> page = productService.getAllProducts(search, pageable);
         model.addAttribute("page", page);
         return "products";
     }
