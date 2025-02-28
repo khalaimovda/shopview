@@ -1,0 +1,32 @@
+package com.github.khalaimovda.shopview.controller;
+
+
+import com.github.khalaimovda.shopview.model.Product;
+import com.github.khalaimovda.shopview.service.ProductService;
+import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+
+@Controller
+@RequestMapping("/products")
+@RequiredArgsConstructor
+public class ProductController {
+
+    private final ProductService productService;
+
+    @GetMapping("")
+    public String getAllProducts(
+        Model model,
+        Pageable pageable,
+        @RequestParam(value = "search", defaultValue = "") String search
+    ) {
+        Page<Product> page = productService.getAllProducts(search, pageable);
+        model.addAttribute("page", page);
+        return "products";
+    }
+}

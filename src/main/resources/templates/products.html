@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <link rel="stylesheet" th:href="@{/css/products-styles.css}"/>
+  <title>Products</title>
+</head>
+
+<body>
+
+<header>
+  <div class="navbar">
+    <button class="navbar-item">
+      Заказы
+    </button>
+    <button class="navbar-item">
+      Корзина
+    </button>
+  </div>
+</header>
+
+<main>
+  <div class="product-bar">
+    <div class="product-create">
+      <button class="product-create-btn" id="productCreateBtn">Добавить товар</button>
+    </div>
+    <div class="product-text-filter">
+      <input class="product-text-filter-input" type="text" placeholder="Поиск по названию/описанию" />
+    </div>
+  </div>
+
+  <div class="products">
+    <div class="product"
+       th:each="product : ${page.content}"
+       th:with="productId=${product.id}"
+       th:data-product-id="${productId}"
+    >
+
+      <div class="product-name">
+        <a th:href="@{'/products/' + ${product.id}}">
+          <span th:text="${product.name}">Наименование товара</span>
+        </a>
+      </div>
+
+      <div class="product-image">
+        <img th:src="@{${product.imagePath}}" alt="Product Image">
+      </div>
+
+      <div class="product-purchase">
+        <div class="product-purchase-price">
+          <div>Цена: <span th:text="${product.price}">1500</span> руб</div>
+        </div>
+        <div class="product-purchase-cart">
+          <div class="product-purchase-cart-quantity">
+            <button class="product-purchase-cart-quantity-stepper decrement">−</button>
+            <span class="product-purchase-cart-quantity-value">1</span>
+            <button class="product-purchase-cart-quantity-stepper increment">+</button>
+          </div>
+          <button class="product-purchase-cart-add">Добавить в корзину</button>
+          <button class="product-purchase-cart-remove">Удалить из корзины</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+
+  <div class="pagination-container">
+    <ul class="pagination">
+      <li><a href="?page=1">1</a></li>
+      <li><span class="active">2</span></li>
+      <li><a href="?page=3">3</a></li>
+      <li><a href="?page=4">4</a></li>
+      <li><a href="?page=5">5</a></li>
+    </ul>
+
+    <div class="page-size">
+      <label for="pageSize">Товаров на странице:</label>
+      <select id="pageSize">
+        <option value="10" selected>10</option>
+        <option value="20">20</option>
+        <option value="50">50</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="modalOverlay">
+    <div class="modal">
+      <div class="modal-header">Добавить новый товар в каталог</div>
+      <form id="form" enctype="multipart/form-data" method="post" action="http://127.0.0.1:8080/products">
+        <label for="form-name">Название</label>
+        <input type="text" id="form-name" name="name" placeholder="Наименование товара" required>
+
+        <label for="form-description">Описание</label>
+        <textarea id="form-description" name="description" rows="5" placeholder="Описание товара..." required></textarea>
+
+        <label for="form-image">Изображение</label>
+        <input type="file" id="form-image" name="image" accept="image/*" required>
+
+        <label for="form-price">Цена</label>
+        <input type="number" min="0.01" max="99999" step=".01" id="form-price" name="price" placeholder="Цена в рублях" required>
+
+        <button type="submit">Создать</button>
+      </form>
+    </div>
+  </div>
+
+
+</main>
+
+<script th:src="@{/js/products-scripts.js}"></script>
+
+</body>
+</html>
