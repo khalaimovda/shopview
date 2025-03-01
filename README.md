@@ -1,9 +1,27 @@
 # ShopView
 
+## Get started
+
+- Up infra (database)
 ```shell
-docker compose -f infra/compose.yaml up -d
+make infra_up
 ```
 
+- Start app (and create database schema)
 ```shell
-docker compose -f infra/compose.yaml down
+make app_start
 ```
+
+- Clean data (if necessary)
+```shell
+make data_clean
+# Password: password
+```
+
+- Fill test data (if necessary)
+```shell
+make data_init
+# Password: password
+```
+
+- Main page with product catalog will be available at `http://127.0.0.1:8080/products`
