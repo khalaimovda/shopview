@@ -1,5 +1,6 @@
 package com.github.khalaimovda.shopview.service;
 
+import com.github.khalaimovda.shopview.dto.ProductCreateForm;
 import com.github.khalaimovda.shopview.dto.ProductListResponseDto;
 import com.github.khalaimovda.shopview.mapper.ProductMapper;
 import com.github.khalaimovda.shopview.model.Order;
@@ -53,5 +54,17 @@ public class ProductServiceImpl implements ProductService {
             }).toList();
 
         return new PageImpl<>(resultProducts, productPage.getPageable(), productPage.getTotalElements());
+    }
+
+    @Override
+    public void createProduct(ProductCreateForm form) {
+        String imagePath = imageService.saveImage(form.getImage());
+        try {
+            Product product = productMapper.toProduct(form, imagePath);
+            productRepository.save(product);
+        } catch (Exception e) {
+            // todo: throw http exception
+            imageService.deleteImage(imagePath);
+        }
     }
 }
