@@ -32,22 +32,17 @@ public class ProductServiceImpl implements ProductService {
     @Override
     public Page<ProductListResponseDto> getAllProducts(String contentSubstring, Pageable pageable) {
 
-        Optional<Order> activeOrder = orderRepository.findByIsActiveTrue();
-
         Page<Product> productPage = productRepository.findAllByNameContainingIgnoreCaseOrDescriptionContainingIgnoreCase(
             contentSubstring, contentSubstring, pageable);
 
-        // todo: Выполнить все через Optional-цепочку
-        Map<Long, Integer> productIdCountMap;
-        if (activeOrder.isPresent()) {
+        Optional<Order> activeOrder = orderRepository.findByIsActiveTrue();
+        Map<Long, Integer> productIdCountMap = activeOrder.map(order -> {
             List<OrderProduct> orderProducts = orderProductRepository.findAllByOrderAndProductIn(
                 activeOrder.get(), productPage.getContent()
             );
-            productIdCountMap = orderProducts.stream()
+            return orderProducts.stream()
                 .collect(Collectors.toMap(op -> op.getId().getProductId(), op -> op.getCount()));
-        } else {
-           productIdCountMap = new HashMap<>();
-        }
+        }).orElseGet(HashMap::new);
 
         List<ProductListResponseDto> resultProducts = productPage.getContent().stream()
             .map(product -> {
