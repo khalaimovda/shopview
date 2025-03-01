@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <link rel="stylesheet" th:href="@{/css/product-styles.css}"/>
+  <title>Product</title>
+</head>
+<body>
+
+<header>
+  <div class="navbar">
+    <button class="navbar-item">
+      Заказы
+    </button>
+    <button class="navbar-item">
+      Корзина
+    </button>
+  </div>
+</header>
+
+<main>
+  <div class="product" th:data-product-id="${product.id}">
+    <div class="product-name" th:text="${product.name}">Наименование товара</div>
+
+    <div class="product-image">
+      <img th:src="@{${product.imagePath}}" alt="Изображение товара">
+    </div>
+
+    <div class="product-description" th:text="${product.description}">Описание товара</div>
+
+    <div class="product-purchase">
+      <div class="product-purchase-price">
+        <div>Цена: <span th:text="${product.price}">1500</span> руб</div>
+      </div>
+      <div class="product-purchase-cart">
+        <div class="product-purchase-cart-quantity">
+          <button class="product-purchase-cart-quantity-stepper decrement">−</button>
+          <span class="product-purchase-cart-quantity-value">1</span>
+          <button class="product-purchase-cart-quantity-stepper increment">+</button>
+        </div>
+        <button class="product-purchase-cart-add">Добавить в корзину</button>
+        <button class="product-purchase-cart-remove">Удалить из корзины</button>
+      </div>
+    </div>
+  </div>
+</main>
+
+<script th:src="@{/js/product-scripts.js}"></script>
+
+</body>
+</html>

@@ -10,13 +10,16 @@ import lombok.Data;
 import java.math.BigDecimal;
 
 @Data
-public class ProductListResponseDto {
+public class ProductResponseDto {
     @NotNull
     @Min(1L)
     private Long id;
 
     @NotBlank
     private String name;
+
+    @NotBlank
+    private String description;
 
     @NotBlank
     private String imagePath;

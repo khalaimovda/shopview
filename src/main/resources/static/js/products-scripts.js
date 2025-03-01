@@ -160,7 +160,7 @@ const setUpPageSizeValue = () => {
 
 const setUpTextFilterInputValue = () => {
     const params = new URLSearchParams(window.location.search);
-    const textFilterInputValue = parseInt(params.get('search')) || defaultTextFilterInputValue;
+    const textFilterInputValue = params.get('search') || defaultTextFilterInputValue;
     textFilterInput.value = textFilterInputValue;
 }
 

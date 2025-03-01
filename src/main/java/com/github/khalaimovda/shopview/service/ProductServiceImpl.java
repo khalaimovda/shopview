@@ -2,9 +2,11 @@ package com.github.khalaimovda.shopview.service;
 
 import com.github.khalaimovda.shopview.dto.ProductCreateForm;
 import com.github.khalaimovda.shopview.dto.ProductListResponseDto;
+import com.github.khalaimovda.shopview.dto.ProductResponseDto;
 import com.github.khalaimovda.shopview.mapper.ProductMapper;
 import com.github.khalaimovda.shopview.model.Order;
 import com.github.khalaimovda.shopview.model.OrderProduct;
+import com.github.khalaimovda.shopview.model.OrderProductId;
 import com.github.khalaimovda.shopview.model.Product;
 import com.github.khalaimovda.shopview.repository.OrderProductRepository;
 import com.github.khalaimovda.shopview.repository.OrderRepository;
@@ -15,15 +17,14 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 public class ProductServiceImpl implements ProductService {
+
+    // todo: ActiveOrder нужно закэшировать!
 
     private final ProductRepository productRepository;
     private final OrderRepository orderRepository;
@@ -63,8 +64,26 @@ public class ProductServiceImpl implements ProductService {
             Product product = productMapper.toProduct(form, imagePath);
             productRepository.save(product);
         } catch (Exception e) {
-            // todo: throw http exception
             imageService.deleteImage(imagePath);
+            throw e;
         }
+    }
+
+    @Override
+    public ProductResponseDto getProductById(Long id) {
+        Optional<Product> optionalProduct = productRepository.findById(id);
+        if (optionalProduct.isEmpty()) {
+            throw new NoSuchElementException(String.format("Product with id %s not found", id));
+        }
+        Product product = optionalProduct.get();
+
+        Optional<Order> activeOrder = orderRepository.findByIsActiveTrue();
+        Integer count = activeOrder.map(order -> {
+            Optional<OrderProduct> orderProduct = orderProductRepository.findById(new OrderProductId(order.getId(), product.getId()));
+            return orderProduct.map(OrderProduct::getCount).orElse(0);
+        }).orElse(0);
+        String imageSrcPath = imageService.getImageSrcPath(product.getImagePath());
+
+        return productMapper.toProductResponseDto(product, imageSrcPath, count);
     }
 }
