@@ -47,6 +47,11 @@ button {
   cursor: pointer;
 }
 
+a {
+  color: black;
+  text-decoration: none;
+}
+
 /* Header */
 header {
   width: 100%;

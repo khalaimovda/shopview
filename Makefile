@@ -14,3 +14,9 @@ data_init:
 data_clean:
 	psql -h localhost -p 5432 -U username -d shop -f infra/clean.sql
 	# Password: password (see compose.yaml)
+
+images_copy:
+	infra/copy_images.sh
+
+images_clean:
+	rm -rf uploads/images/*

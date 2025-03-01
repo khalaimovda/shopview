@@ -12,7 +12,8 @@ import org.mapstruct.ReportingPolicy;
 public interface ProductMapper {
 
     @Mappings({
+        @Mapping(source = "imagePath", target = "imagePath"),
         @Mapping(source = "count", target = "count")
     })
-    ProductListResponseDto toProductListResponseDto(Product product, Integer count);
+    ProductListResponseDto toProductListResponseDto(Product product, String imagePath, Integer count);
 }

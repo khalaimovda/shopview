@@ -28,6 +28,7 @@ public class ProductServiceImpl implements ProductService {
     private final OrderRepository orderRepository;
     private final OrderProductRepository orderProductRepository;
     private final ProductMapper productMapper;
+    private final ImageService imageService;
 
     @Override
     public Page<ProductListResponseDto> getAllProducts(String contentSubstring, Pageable pageable) {
@@ -47,7 +48,8 @@ public class ProductServiceImpl implements ProductService {
         List<ProductListResponseDto> resultProducts = productPage.getContent().stream()
             .map(product -> {
                 Integer count = productIdCountMap.getOrDefault(product.getId(), 0);
-                return productMapper.toProductListResponseDto(product, count);
+                String imageSrcPath = imageService.getImageSrcPath(product.getImagePath());
+                return productMapper.toProductListResponseDto(product,  imageSrcPath, count);
             }).toList();
 
         return new PageImpl<>(resultProducts, productPage.getPageable(), productPage.getTotalElements());

@@ -14,3 +14,8 @@ spring:
     properties:
       hibernate:
         format_sql: true
+
+app:
+  images:
+    upload-dir: uploads/images
+    base-url: /images/

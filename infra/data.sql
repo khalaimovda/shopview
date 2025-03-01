@@ -13,7 +13,7 @@ BEGIN
     EXECUTE
     $$
       INSERT INTO products(name, description, image_path, price)
-      VALUES ('Товар ' || $1, 'Описание ' || $1, 'image_path_' || $1 || '.jpg', 0.99 + $1)
+      VALUES ('Товар ' || $1, 'Описание ' || $1, 'image_path_' || $1 || '.png', 0.99 + $1)
     $$
     USING counter;
   END LOOP;

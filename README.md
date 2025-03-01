@@ -24,4 +24,14 @@ make data_init
 # Password: password
 ```
 
+- Delete previous images (if necessary)
+```shell
+make images_clean
+```
+
+- Copy images for test data (if necessary)
+```shell
+make images_copy
+```
+
 - Main page with product catalog will be available at `http://127.0.0.1:8080/products`
