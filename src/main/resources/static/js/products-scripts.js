@@ -1,5 +1,9 @@
+const defaultTextFilterInputValue = '';
+const defaultPageSizeValue = 10;
+
 // Elements
 const modalOverlay = document.getElementById('modalOverlay');
+const textFilterInput = document.querySelector(".product-text-filter-input");
 const productCreateBtn = document.getElementById('productCreateBtn');
 const form = document.getElementById('form');
 const increments = document.querySelectorAll('.product-purchase-cart-quantity-stepper.increment');
@@ -17,6 +21,15 @@ const closeModal = () => {
   document.body.classList.remove('modal-open'); // unblock scroll
   form.reset();
 };
+
+
+const getProductsWithTextFilter = (search) => {
+    const url = new URL(window.location.href);
+    url.searchParams.set('search', search);
+    url.searchParams.set('page', 0); // Request first page if we changed search param
+    window.location.href = url.toString();
+};
+
 
 const addProductToCart = (event) => {
   const addBtn = event.target.closest('.product-purchase-cart-add');
@@ -145,8 +158,15 @@ const setUpPageSizeValue = () => {
     pageSize.value = pageSizeValue;
 }
 
+const setUpTextFilterInputValue = () => {
+    const params = new URLSearchParams(window.location.search);
+    const textFilterInputValue = parseInt(params.get('search')) || defaultTextFilterInputValue;
+    textFilterInput.value = textFilterInputValue;
+}
+
 // SetUp
 setUpPageSizeValue()
+setUpTextFilterInputValue ()
 
 // Event listeners
 
@@ -159,6 +179,15 @@ modalOverlay.addEventListener('click', (event) => {
     closeModal();
   }
 });
+
+// Get Products with text filter
+textFilterInput.addEventListener("keydown", (event) => {
+  if (event.key === "Enter") {
+    const search = textFilterInput.value.trim();
+    getProductsWithTextFilter(search);
+  }
+});
+
 
 // Increment product quantity in cart
 increments.forEach(
@@ -174,7 +203,7 @@ decrements.forEach(
 form.addEventListener('submit', (event) => createProduct(event));
 
 // Change page
-document.addEventListener('DOMContentLoaded', function () {
+document.addEventListener('DOMContentLoaded', () => {
     const pageButtons = document.querySelectorAll('.page-button');
     pageButtons.forEach((pageButton) => {
         if (pageButton.classList.contains('active')) {
