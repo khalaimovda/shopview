@@ -7,7 +7,9 @@ const textFilterInput = document.getElementById('productTextFilterInput');
 const productCreateBtn = document.getElementById('productCreateBtn');
 const form = document.getElementById('form');
 const increments = document.querySelectorAll('.product-purchase-cart-quantity-stepper.increment');
-const decrements = document.querySelectorAll('.product-purchase-cart-quantity-stepper.increment');
+const decrements = document.querySelectorAll('.product-purchase-cart-quantity-stepper.decrement');
+const adds = document.querySelectorAll('.product-purchase-cart-add');
+const removals = document.querySelectorAll('.product-purchase-cart-remove');
 const carts = document.querySelectorAll('.product-purchase-cart');
 const pageSize = document.getElementById('pageSize');
 
@@ -36,6 +38,7 @@ const addProductToCart = (event) => {
   const addBtn = event.target.closest('.product-purchase-cart-add');
   const removeBtn = event.target.closest('.product-purchase-cart-remove');
   const quantity = event.target.closest('.product-purchase-cart-quantity');
+  const quantityValue = event.target.closest('.product-purchase-cart-quantity-value');
 
   const product = event.target.closest('.product');
   const productId = product.dataset.productId;
@@ -50,6 +53,34 @@ const addProductToCart = (event) => {
     addBtn.style.display = 'none';
     removeBtn.style.display = 'flex';
     quantity.style.display = 'flex';
+    quantityValue.textContent = '1';
+  })
+  .catch(error => {
+    console.error('Error:', error);
+    alert('Error adding product to cart. See JS console');
+  });
+};
+
+const removeProductFromCart = (event) => {
+  const addBtn = event.target.closest('.product-purchase-cart-add');
+  const removeBtn = event.target.closest('.product-purchase-cart-remove');
+  const quantity = event.target.closest('.product-purchase-cart-quantity');
+  const quantityValue = event.target.closest('.product-purchase-cart-quantity-value');
+
+  const product = event.target.closest('.product');
+  const productId = product.dataset.productId;
+
+  fetch(`/cart/remove/${productId}`, {method: 'POST'})
+  .then(response => {
+    if (!response.ok) {
+      throw new Error(`Error: ${response.statusText}`);
+    }
+  })
+  .then(() => {
+    addBtn.style.display = 'flex';
+    removeBtn.style.display = 'none';
+    quantity.style.display = 'none';
+    quantityValue.textContent = '0';
   })
   .catch(error => {
     console.error('Error:', error);
@@ -218,6 +249,16 @@ increments.forEach(
 // Decrement product quantity in cart
 decrements.forEach(
   decrement => decrement.addEventListener('click', (event) => decrementProductQuantityInCart(event))
+);
+
+// Add product to cart
+adds.forEach(
+  add => add.addEventListener('click', (event) => addProductToCart(event))
+);
+
+// Remove product from cart
+removals.forEach(
+  remove => remove.addEventListener('click', (event) => removeProductFromCart(event))
 );
 
 // Create new product
