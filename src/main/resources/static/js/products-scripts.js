@@ -4,6 +4,7 @@ const productCreateBtn = document.getElementById('productCreateBtn');
 const form = document.getElementById('form');
 const increments = document.querySelectorAll('.product-purchase-cart-quantity-stepper.increment');
 const decrements = document.querySelectorAll('.product-purchase-cart-quantity-stepper.increment');
+const pageSize = document.getElementById('pageSize');
 
 // Functions
 const openModal = () => {
@@ -121,6 +122,31 @@ const createProduct = (event) => {
   event.preventDefault();
 };
 
+const changePage = (pageButton) => {
+  const page = pageButton.dataset.page;
+  const url = new URL(window.location.href);
+  url.searchParams.set('page', page);
+  window.location.href = url.toString();
+};
+
+const changePageSize = () => {
+  const newPageSizeValue = pageSize.value;
+  const currentUrl = new URL(window.location.href);
+  const params = currentUrl.searchParams;
+  params.set('size', newPageSizeValue);
+  params.set('page', 0); // Request first page if we changed page size
+
+  window.location.href = currentUrl.toString(); // Reload current page
+};
+
+const setUpPageSizeValue = () => {
+    const params = new URLSearchParams(window.location.search);
+    const pageSizeValue = parseInt(params.get('size')) || defaultPageSizeValue;
+    pageSize.value = pageSizeValue;
+}
+
+// SetUp
+setUpPageSizeValue()
 
 // Event listeners
 
@@ -146,3 +172,17 @@ decrements.forEach(
 
 // Create new product
 form.addEventListener('submit', (event) => createProduct(event));
+
+// Change page
+document.addEventListener('DOMContentLoaded', function () {
+    const pageButtons = document.querySelectorAll('.page-button');
+    pageButtons.forEach((pageButton) => {
+        if (pageButton.classList.contains('active')) {
+            return;
+        }
+        pageButton.addEventListener('click', () => changePage(pageButton));
+    });
+});
+
+// Change page size
+pageSize.addEventListener('change', () => changePageSize());

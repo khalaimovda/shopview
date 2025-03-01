@@ -44,7 +44,7 @@
       </div>
 
       <div class="product-image">
-        <img th:src="@{${product.imagePath}}" alt="Product Image">
+        <img th:src="@{${product.imagePath}}" alt="Изображение товара">
       </div>
 
       <div class="product-purchase">
@@ -67,12 +67,15 @@
 
 
   <div class="pagination-container">
-    <ul class="pagination">
-      <li><a href="?page=1">1</a></li>
-      <li><span class="active">2</span></li>
-      <li><a href="?page=3">3</a></li>
-      <li><a href="?page=4">4</a></li>
-      <li><a href="?page=5">5</a></li>
+    <ul class="pagination" th:if="${page.totalPages > 1}">
+      <li th:each="i : ${#numbers.sequence(0, page.totalPages - 1)}">
+        <button
+          class="page-button"
+          th:attr="data-page=${i}"
+          th:text="${i + 1}"
+          th:classappend="${i == page.number} ? 'active' : ''">
+        </button>
+      </li>
     </ul>
 
     <div class="page-size">
