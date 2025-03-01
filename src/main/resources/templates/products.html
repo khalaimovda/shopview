@@ -26,7 +26,7 @@
       <button class="product-create-btn" id="productCreateBtn">Добавить товар</button>
     </div>
     <div class="product-text-filter">
-      <input class="product-text-filter-input" type="text" placeholder="Поиск по названию/описанию" />
+      <input class="product-text-filter-input" id="productTextFilterInput" type="text" placeholder="Поиск по названию/описанию" />
     </div>
   </div>
 
@@ -54,7 +54,7 @@
         <div class="product-purchase-cart">
           <div class="product-purchase-cart-quantity">
             <button class="product-purchase-cart-quantity-stepper decrement">−</button>
-            <span class="product-purchase-cart-quantity-value">1</span>
+            <span class="product-purchase-cart-quantity-value" th:text="${product.count}">1</span>
             <button class="product-purchase-cart-quantity-stepper increment">+</button>
           </div>
           <button class="product-purchase-cart-add">Добавить в корзину</button>

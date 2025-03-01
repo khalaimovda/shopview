@@ -3,11 +3,12 @@ const defaultPageSizeValue = 10;
 
 // Elements
 const modalOverlay = document.getElementById('modalOverlay');
-const textFilterInput = document.querySelector(".product-text-filter-input");
+const textFilterInput = document.getElementById('productTextFilterInput');
 const productCreateBtn = document.getElementById('productCreateBtn');
 const form = document.getElementById('form');
 const increments = document.querySelectorAll('.product-purchase-cart-quantity-stepper.increment');
 const decrements = document.querySelectorAll('.product-purchase-cart-quantity-stepper.increment');
+const carts = document.querySelectorAll('.product-purchase-cart');
 const pageSize = document.getElementById('pageSize');
 
 // Functions
@@ -164,9 +165,29 @@ const setUpTextFilterInputValue = () => {
     textFilterInput.value = textFilterInputValue;
 }
 
+const setUpProductQuantities = (cart) => {
+  const addBtn = cart.querySelector('.product-purchase-cart-add');
+  const removeBtn = cart.querySelector('.product-purchase-cart-remove');
+  const quantity = cart.querySelector('.product-purchase-cart-quantity');
+  const quantityValue = cart.querySelector('.product-purchase-cart-quantity-value');
+
+  if (parseInt(quantityValue.textContent.trim()) === 0) {
+    addBtn.style.display = 'flex';
+    removeBtn.style.display = 'none';
+    quantity.style.display = 'none';
+  } else {
+    addBtn.style.display = 'none';
+    removeBtn.style.display = 'flex';
+    quantity.style.display = 'flex';
+  }
+};
+
 // SetUp
 setUpPageSizeValue()
 setUpTextFilterInputValue ()
+carts.forEach(
+  cart => setUpProductQuantities(cart)
+);
 
 // Event listeners
 
