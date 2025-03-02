@@ -38,7 +38,7 @@
     >
 
       <div class="product-name">
-        <a th:href="@{'/products/' + ${product.id}}">
+        <a th:href="@{/products/{id}(id=${product.id})}">
           <span th:text="${product.name}">Наименование товара</span>
         </a>
       </div>
@@ -51,7 +51,7 @@
         <div class="product-purchase-price">
           <div>Цена: <span th:text="${product.price}">1500</span> руб</div>
         </div>
-        <div class="product-purchase-cart">
+        <div class="product-purchase-cart" th:data-product-id="${productId}">
           <div class="product-purchase-cart-quantity">
             <button class="product-purchase-cart-quantity-stepper decrement">−</button>
             <span class="product-purchase-cart-quantity-value" th:text="${product.count}">1</span>

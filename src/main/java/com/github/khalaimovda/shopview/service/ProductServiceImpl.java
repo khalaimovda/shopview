@@ -3,7 +3,6 @@ package com.github.khalaimovda.shopview.service;
 import com.github.khalaimovda.shopview.dto.ProductCreateForm;
 import com.github.khalaimovda.shopview.dto.ProductListResponseDto;
 import com.github.khalaimovda.shopview.dto.ProductResponseDto;
-import com.github.khalaimovda.shopview.exception.ProductCreationException;
 import com.github.khalaimovda.shopview.mapper.ProductMapper;
 import com.github.khalaimovda.shopview.model.Order;
 import com.github.khalaimovda.shopview.model.OrderProduct;
@@ -22,7 +21,6 @@ import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -35,6 +33,7 @@ public class ProductServiceImpl implements ProductService {
     private final OrderProductRepository orderProductRepository;
     private final ProductMapper productMapper;
     private final ImageService imageService;
+    private final OrderProductService orderProductService;
 
     @Override
     @Transactional(readOnly = true)
@@ -44,13 +43,9 @@ public class ProductServiceImpl implements ProductService {
             contentSubstring, contentSubstring, pageable);
 
         Optional<Order> activeOrder = orderRepository.findByIsActiveTrue();
-        Map<Long, Integer> productIdCountMap = activeOrder.map(order -> {
-            List<OrderProduct> orderProducts = orderProductRepository.findAllByOrderAndProductIn(
-                activeOrder.get(), productPage.getContent()
-            );
-            return orderProducts.stream()
-                .collect(Collectors.toMap(op -> op.getId().getProductId(), op -> op.getCount()));
-        }).orElseGet(HashMap::new);
+        Map<Long, Integer> productIdCountMap = activeOrder
+            .map(order -> orderProductService.getProductIdCountMap(order, productPage.getContent()))
+            .orElseGet(HashMap::new);
 
         List<ProductListResponseDto> resultProducts = productPage.getContent().stream()
             .map(product -> {
@@ -65,21 +60,10 @@ public class ProductServiceImpl implements ProductService {
     @Transactional
     @Override
     public void createProduct(ProductCreateForm form) {
-        String imagePath;
-        try {
-            imagePath = imageService.saveImage(form.getImage());
-        } catch (Exception e) {
-            throw new ProductCreationException("Error saving product image", e);
-        }
-
+        String imagePath = imageService.saveImage(form.getImage());
         registerImageRollback(imagePath);
         Product product = productMapper.toProduct(form, imagePath);
-
-        try {
-            productRepository.save(product);
-        } catch (Exception e) {
-            throw new ProductCreationException("Error saving product to database", e);
-        }
+        productRepository.save(product);
     }
 
     @Override

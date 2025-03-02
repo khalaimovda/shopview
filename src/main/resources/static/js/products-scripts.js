@@ -34,16 +34,15 @@ const getProductsWithTextFilter = (search) => {
 };
 
 
-const addProductToCart = (event) => {
-  const addBtn = event.target.closest('.product-purchase-cart-add');
-  const removeBtn = event.target.closest('.product-purchase-cart-remove');
-  const quantity = event.target.closest('.product-purchase-cart-quantity');
-  const quantityValue = event.target.closest('.product-purchase-cart-quantity-value');
+const addProductToCart = (cart) => {
+  const addBtn = cart.querySelector('.product-purchase-cart-add');
+  const removeBtn = cart.querySelector('.product-purchase-cart-remove');
+  const quantity = cart.querySelector('.product-purchase-cart-quantity');
+  const quantityValue = cart.querySelector('.product-purchase-cart-quantity-value');
 
-  const product = event.target.closest('.product');
-  const productId = product.dataset.productId;
+  const productId = cart.dataset.productId;
 
-  fetch(`/cart/add/${productId}`, {method: 'POST'})
+  fetch(`/order/add/${productId}`, {method: 'POST'})
   .then(response => {
     if (!response.ok) {
       throw new Error(`Error: ${response.statusText}`);
@@ -61,16 +60,15 @@ const addProductToCart = (event) => {
   });
 };
 
-const removeProductFromCart = (event) => {
-  const addBtn = event.target.closest('.product-purchase-cart-add');
-  const removeBtn = event.target.closest('.product-purchase-cart-remove');
-  const quantity = event.target.closest('.product-purchase-cart-quantity');
-  const quantityValue = event.target.closest('.product-purchase-cart-quantity-value');
+const removeProductFromCart = (cart) => {
+  const addBtn = cart.querySelector('.product-purchase-cart-add');
+  const removeBtn = cart.querySelector('.product-purchase-cart-remove');
+  const quantity = cart.querySelector('.product-purchase-cart-quantity');
+  const quantityValue = cart.querySelector('.product-purchase-cart-quantity-value');
 
-  const product = event.target.closest('.product');
-  const productId = product.dataset.productId;
+  const productId = cart.dataset.productId;
 
-  fetch(`/cart/remove/${productId}`, {method: 'POST'})
+  fetch(`/order/remove/${productId}`, {method: 'POST'})
   .then(response => {
     if (!response.ok) {
       throw new Error(`Error: ${response.statusText}`);
@@ -88,39 +86,33 @@ const removeProductFromCart = (event) => {
   });
 };
 
-const incrementProductQuantityInCart = (event) => {
-  const quantityValue = event.target.closest('product-purchase-cart-quantity-value');
-  const product = event.target.closest('.product');
-  const productId = product.dataset.productId;
+const incrementProductQuantityInCart = (cart) => {
+  const quantityValue = cart.querySelector('.product-purchase-cart-quantity-value');
 
-  fetch(`/cart/increment/${productId}`, {method: 'POST'})
+  const productId = cart.dataset.productId;
+
+  fetch(`/order/add/${productId}`, {method: 'POST'})
   .then(response => {
     if (!response.ok) {
       throw new Error(`Error: ${response.statusText}`);
     }
-    return response.json();
   })
-  .then(data => {
-    data = {'count': 13};
-    quantityValue.value = data['count'];
-    // quantityValue.value  Увеличить счетчик на полученное значение
-  })
+  .then(() => quantityValue.textContent = (parseInt(quantityValue.textContent.trim()) + 1).toString())
   .catch(error => {
     console.error('Error:', error);
     alert('Error incrementing product quantity in cart. See JS console');
   });
 };
 
-const decrementProductQuantityInCart = (event) => {
-  const addBtn = event.target.closest('.product-purchase-cart-add');
-  const removeBtn = event.target.closest('.product-purchase-cart-remove');
-  const quantity = event.target.closest('.product-purchase-cart-quantity');
-  const quantityValue = event.target.closest('product-purchase-cart-quantity-value');
+const decrementProductQuantityInCart = (cart) => {
+  const addBtn = cart.querySelector('.product-purchase-cart-add');
+  const removeBtn = cart.querySelector('.product-purchase-cart-remove');
+  const quantity = cart.querySelector('.product-purchase-cart-quantity');
+  const quantityValue = cart.querySelector('.product-purchase-cart-quantity-value');
 
-  const product = event.target.closest('.product');
-  const productId = product.dataset.productId;
+  const productId = cart.dataset.productId;
 
-  fetch(`/cart/decrement/${productId}`, {method: 'POST'})
+  fetch(`/order/decrease/${productId}`, {method: 'POST'})
   .then(response => {
     if (!response.ok) {
       throw new Error(`Error: ${response.statusText}`);
@@ -243,22 +235,22 @@ textFilterInput.addEventListener("keydown", (event) => {
 
 // Increment product quantity in cart
 increments.forEach(
-  increment => increment.addEventListener('click', (event) => incrementProductQuantityInCart(event))
+  increment => increment.addEventListener('click', () => incrementProductQuantityInCart(increment.parentElement.parentElement))
 );
 
 // Decrement product quantity in cart
 decrements.forEach(
-  decrement => decrement.addEventListener('click', (event) => decrementProductQuantityInCart(event))
+  decrement => decrement.addEventListener('click', () => decrementProductQuantityInCart(decrement.parentElement.parentElement))
 );
 
 // Add product to cart
 adds.forEach(
-  add => add.addEventListener('click', (event) => addProductToCart(event))
+  add => add.addEventListener('click', () => addProductToCart(add.parentElement))
 );
 
 // Remove product from cart
 removals.forEach(
-  remove => remove.addEventListener('click', (event) => removeProductFromCart(event))
+  remove => remove.addEventListener('click', () => removeProductFromCart(remove.parentElement))
 );
 
 // Create new product

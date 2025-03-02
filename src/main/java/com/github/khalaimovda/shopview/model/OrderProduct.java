@@ -36,4 +36,15 @@ public class OrderProduct {
         this.count = count;
         this.id = new OrderProductId(order.getId(), product.getId());
     }
+
+    public void incrementCount() {
+        count++;
+    }
+
+    public void decrementCount() {
+        if (count == 1) {
+            throw new IllegalStateException("Count can not me less than 1");
+        }
+        count--;
+    }
 }

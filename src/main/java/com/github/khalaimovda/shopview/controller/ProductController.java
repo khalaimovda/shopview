@@ -39,9 +39,9 @@ public class ProductController {
     }
 
     @PostMapping("")
-    public ResponseEntity<Void> createProduct(@Valid @ModelAttribute ProductCreateForm form) {
+    @ResponseStatus(HttpStatus.CREATED)
+    public void createProduct(@Valid @ModelAttribute ProductCreateForm form) {
         productService.createProduct(form);
-        return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 
     @GetMapping("/{id}")
