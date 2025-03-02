@@ -3,6 +3,7 @@ package com.github.khalaimovda.shopview.service;
 import com.github.khalaimovda.shopview.dto.ProductCreateForm;
 import com.github.khalaimovda.shopview.dto.ProductListResponseDto;
 import com.github.khalaimovda.shopview.dto.ProductResponseDto;
+import com.github.khalaimovda.shopview.exception.ProductCreationException;
 import com.github.khalaimovda.shopview.mapper.ProductMapper;
 import com.github.khalaimovda.shopview.model.Order;
 import com.github.khalaimovda.shopview.model.OrderProduct;
@@ -16,6 +17,9 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -33,6 +37,7 @@ public class ProductServiceImpl implements ProductService {
     private final ImageService imageService;
 
     @Override
+    @Transactional(readOnly = true)
     public Page<ProductListResponseDto> getAllProducts(String contentSubstring, Pageable pageable) {
 
         Page<Product> productPage = productRepository.findAllByNameContainingIgnoreCaseOrDescriptionContainingIgnoreCase(
@@ -57,15 +62,23 @@ public class ProductServiceImpl implements ProductService {
         return new PageImpl<>(resultProducts, productPage.getPageable(), productPage.getTotalElements());
     }
 
+    @Transactional
     @Override
     public void createProduct(ProductCreateForm form) {
-        String imagePath = imageService.saveImage(form.getImage());
+        String imagePath;
         try {
-            Product product = productMapper.toProduct(form, imagePath);
+            imagePath = imageService.saveImage(form.getImage());
+        } catch (Exception e) {
+            throw new ProductCreationException("Error saving product image", e);
+        }
+
+        registerImageRollback(imagePath);
+        Product product = productMapper.toProduct(form, imagePath);
+
+        try {
             productRepository.save(product);
         } catch (Exception e) {
-            imageService.deleteImage(imagePath);
-            throw e;
+            throw new ProductCreationException("Error saving product to database", e);
         }
     }
 
@@ -85,5 +98,24 @@ public class ProductServiceImpl implements ProductService {
         String imageSrcPath = imageService.getImageSrcPath(product.getImagePath());
 
         return productMapper.toProductResponseDto(product, imageSrcPath, count);
+    }
+
+    /**
+     * Register TransactionSynchronization which will remove image if transaction is rolled back
+     */
+    private void registerImageRollback(String imagePath) {
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCompletion(int status) {
+                if (status == TransactionSynchronization.STATUS_ROLLED_BACK) {
+                    imageService.deleteImage(imagePath);
+                }
+            }
+            @Override public void suspend() {}
+            @Override public void resume() {}
+            @Override public void flush() {}
+            @Override public void beforeCommit(boolean readOnly) {}
+            @Override public void beforeCompletion() {}
+        });
     }
 }

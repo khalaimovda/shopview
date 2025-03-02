@@ -5,6 +5,8 @@ spring:
     url: jdbc:postgresql://localhost:5432/shop
     username: username
     password: password
+  hikari:
+    transaction-isolation: 2
   liquibase:
     change-log: "classpath:/db/changelog/db.changelog-master.xml"
 
