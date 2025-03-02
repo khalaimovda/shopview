@@ -68,7 +68,7 @@ const removeProductFromCart = (cart) => {
 
   const productId = cart.dataset.productId;
 
-  fetch(`/order/remove/${productId}`, {method: 'POST'})
+  fetch(`/order/remove/${productId}`, {method: 'DELETE'})
   .then(response => {
     if (!response.ok) {
       throw new Error(`Error: ${response.statusText}`);
@@ -117,13 +117,10 @@ const decrementProductQuantityInCart = (cart) => {
     if (!response.ok) {
       throw new Error(`Error: ${response.statusText}`);
     }
-    return response.json();
   })
-  .then(data => {
-    data = {'count': 13};
-    if (data['count'] > 0) {
-      quantityValue.value = data['count'];
-    } else {
+  .then(() => {
+    quantityValue.textContent = (parseInt(quantityValue.textContent.trim()) - 1).toString();
+    if (quantityValue.textContent === '0') {
       addBtn.style.display = 'flex';
       removeBtn.style.display = 'none';
       quantity.style.display = 'none';

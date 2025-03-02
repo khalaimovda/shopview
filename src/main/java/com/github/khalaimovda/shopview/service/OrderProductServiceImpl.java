@@ -39,4 +39,25 @@ public class OrderProductServiceImpl implements OrderProductService {
             () -> orderProductRepository.save(new OrderProduct(order, product, 1))
         );
     }
+
+    @Override
+    @Transactional
+    public void decreaseProductInOrder(Order order, Product product) {
+        Optional<OrderProduct> orderProduct = orderProductRepository.findById(new OrderProductId(order.getId(), product.getId()));
+        orderProduct.ifPresent((op) -> {
+            if (op.getCount() > 1) {
+                op.decrementCount();
+                orderProductRepository.save(op);
+            } else {
+                orderProductRepository.delete(op);
+            }
+        });
+    }
+
+    @Override
+    @Transactional
+    public void removeProductFromOrder(Order order, Product product) {
+        Optional<OrderProduct> orderProduct = orderProductRepository.findById(new OrderProductId(order.getId(), product.getId()));
+        orderProduct.ifPresent(orderProductRepository::delete);
+    }
 }

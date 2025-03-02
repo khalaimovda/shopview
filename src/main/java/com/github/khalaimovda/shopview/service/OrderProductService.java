@@ -9,4 +9,6 @@ import java.util.Map;
 public interface OrderProductService {
     Map<Long, Integer> getProductIdCountMap(Order order, List<Product> products);
     void addProductToOrder(Order order, Product product);
+    void decreaseProductInOrder(Order order, Product product);
+    void removeProductFromOrder(Order order, Product product);
 }

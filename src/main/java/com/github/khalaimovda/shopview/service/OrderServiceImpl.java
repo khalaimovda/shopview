@@ -22,18 +22,44 @@ public class OrderServiceImpl implements OrderService {
     @Override
     @Transactional
     public void addProductToCart(Long productId) {
-        Optional<Product> optionalProduct = productRepository.findById(productId);
-        if (optionalProduct.isEmpty()) {
-            throw new NoSuchElementException(String.format("Product with id %s is not found", productId));
-        }
-        Product product = optionalProduct.get();
+        Product product = getProductByIdOrNoSuchElementException(productId);
         Order activeOrder = getOrCreateActiveOrder();
         orderProductService.addProductToOrder(activeOrder, product);
+    }
+
+    @Override
+    @Transactional
+    public void decreaseProductInCart(Long productId) {
+        Product product = getProductByIdOrNoSuchElementException(productId);
+        Order activeOrder = getActiveOrderOrNoSuchElementException();
+        orderProductService.decreaseProductInOrder(activeOrder, product);
+    }
+
+    @Override
+    @Transactional
+    public void removeProductFromCart(Long productId) {
+        Product product = getProductByIdOrNoSuchElementException(productId);
+        Order activeOrder = getActiveOrderOrNoSuchElementException();
+        orderProductService.removeProductFromOrder(activeOrder, product);
     }
 
     @Transactional
     private Order getOrCreateActiveOrder() {
         Optional<Order> activeOrder = orderRepository.findByIsActiveTrue();
         return activeOrder.orElseGet(() -> orderRepository.save(new Order()));
+    }
+
+    private Product getProductByIdOrNoSuchElementException(Long productId) {
+        Optional<Product> optionalProduct = productRepository.findById(productId);
+        return optionalProduct.orElseThrow(
+            () -> new NoSuchElementException(String.format("Product with id %s is not found", productId))
+        );
+    }
+
+    private Order getActiveOrderOrNoSuchElementException() {
+        Optional<Order> optionalActiveOrder = orderRepository.findByIsActiveTrue();
+        return optionalActiveOrder.orElseThrow(
+            () -> new NoSuchElementException("Active order is not found")
+        );
     }
 }
