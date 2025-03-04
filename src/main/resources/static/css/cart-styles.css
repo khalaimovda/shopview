@@ -1,0 +1,227 @@
+/* General */
+:root {
+  --body-background-color: #F5F7FA;
+  --header-background-color: rgb(208, 240, 240);
+  --product-bar-background-color: azure;
+  --product-background-color: #FFFFFF;
+
+  --button-color: rgb(85, 207, 207);
+  --button-hover-color: rgb(65, 192, 192);
+  --button-remove-color: #E74C3C;
+  --button-remove-hover-color: #C0392B;
+
+  --header-background-color-darker: rgb(158, 239, 239);
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: auto;
+  padding: auto;
+  width: 750px;
+  max-width: 750px;
+  background-color: var(--body-background-color);
+}
+
+a {
+  color: black;
+  text-decoration: none;
+}
+
+/* Header */
+header {
+  width: 100%;
+  height: 50px;
+  background-color: var(--header-background-color);
+  display: flex;
+  justify-content: flex-end;
+  position: sticky;
+  top: 0;
+}
+
+header::before {
+  content: "Корзина";
+  position: absolute;
+  top: 15px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-weight: bold;
+  font-size: 16px;
+}
+
+.navbar {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  padding: 10px;
+}
+
+.navbar-item {
+  display: inline-block;
+  margin: 10px;
+  padding: 5px 7px;
+  background-color: var(--button-color);
+  border: 1px solid darkgreen;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.navbar-item:hover {
+  background-color: var(--button-hover-color);
+}
+
+.navbar-item:active {
+  transform: scale(0.97);
+}
+
+/* Main */
+main {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* Products */
+.products {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.product {
+  background-color: var(--product-background-color);
+  border-radius: 15px;
+  border: 2px solid var(--header-background-color);
+  margin-top: 10px;
+  width: 100%;
+  height: 75px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.product-name-price {
+  width: 50%;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: flex-start;
+  padding-left: 20px;
+  gap: 2px; /* adjust gap as needed */
+}
+
+.product-price {
+  color: grey;
+  font-size: 12px;
+}
+
+.product-count {
+  width: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.product-count-remove-btn {
+  height: 30px;
+  width: 100px;
+  background-color: var(--button-remove-color);
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.product-count-remove-btn:hover {
+  background-color: var(--button-remove-hover-color);
+}
+
+.product-count-regulation {
+  display: flex;
+  margin: 0 15px;
+  align-items: center;
+  border: 1px solid var(--input-border-color);
+  border-radius: 5px;
+  overflow: hidden;
+}
+
+.product-count-regulation-stepper {
+  width: 32px;
+  height: 32px;
+  border: none;
+  background-color: var(--product-bar-background-color);
+  cursor: pointer;
+  font-size: 20px;
+  transition: background-color 0.2s ease;
+}
+
+.product-count-regulation-stepper:hover {
+  background-color: var(--header-background-color);
+}
+
+.product-count-regulation-value {
+  width: 30px;
+  text-align: center;
+  font-size: 16px;
+}
+
+.product-total {
+  width: 20%;
+  display: flex;
+  justify-content: flex-end;
+  margin-right: 20px;
+}
+
+/* Order total */
+.order-total {
+  border-radius: 15px;
+  margin-top: 10px;
+  width: 100%;
+  height: 75px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.order {
+  width: 70%;
+  display: flex;
+  align-items: center;
+}
+
+.order-btn {
+  height: 40px;
+  width: 100%;
+  background-color: var(--header-background-color);
+  border: 2px solid darkgreen;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.order-btn:hover {
+  background-color: var(--header-background-color-darker);
+}
+
+.total {
+  width: 28%;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid darkgreen;
+  border-radius: 5px;
+}

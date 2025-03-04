@@ -1,8 +1,9 @@
 package com.github.khalaimovda.shopview.service;
 
+import com.github.khalaimovda.shopview.dto.CartProduct;
 import com.github.khalaimovda.shopview.dto.ProductCreateForm;
-import com.github.khalaimovda.shopview.dto.ProductListResponseDto;
-import com.github.khalaimovda.shopview.dto.ProductResponseDto;
+import com.github.khalaimovda.shopview.dto.ProductDetail;
+import com.github.khalaimovda.shopview.dto.ProductListItem;
 import com.github.khalaimovda.shopview.mapper.ProductMapper;
 import com.github.khalaimovda.shopview.model.Order;
 import com.github.khalaimovda.shopview.model.OrderProduct;
@@ -37,7 +38,7 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     @Transactional(readOnly = true)
-    public Page<ProductListResponseDto> getAllProducts(String contentSubstring, Pageable pageable) {
+    public Page<ProductListItem> getAllProducts(String contentSubstring, Pageable pageable) {
 
         Page<Product> productPage = productRepository.findAllByNameContainingIgnoreCaseOrDescriptionContainingIgnoreCase(
             contentSubstring, contentSubstring, pageable);
@@ -47,11 +48,11 @@ public class ProductServiceImpl implements ProductService {
             .map(order -> orderProductService.getProductIdCountMap(order, productPage.getContent()))
             .orElseGet(HashMap::new);
 
-        List<ProductListResponseDto> resultProducts = productPage.getContent().stream()
+        List<ProductListItem> resultProducts = productPage.getContent().stream()
             .map(product -> {
                 Integer count = productIdCountMap.getOrDefault(product.getId(), 0);
                 String imageSrcPath = imageService.getImageSrcPath(product.getImagePath());
-                return productMapper.toProductListResponseDto(product,  imageSrcPath, count);
+                return productMapper.toProductListItem(product,  imageSrcPath, count);
             }).toList();
 
         return new PageImpl<>(resultProducts, productPage.getPageable(), productPage.getTotalElements());
@@ -66,8 +67,10 @@ public class ProductServiceImpl implements ProductService {
         productRepository.save(product);
     }
 
+    // todo: Я случайно удалил класс ProductResponse. Его надо восстановить
+
     @Override
-    public ProductResponseDto getProductById(Long id) {
+    public ProductDetail getProductById(Long id) {
         Optional<Product> optionalProduct = productRepository.findById(id);
         if (optionalProduct.isEmpty()) {
             throw new NoSuchElementException(String.format("Product with id %s not found", id));
@@ -81,7 +84,7 @@ public class ProductServiceImpl implements ProductService {
         }).orElse(0);
         String imageSrcPath = imageService.getImageSrcPath(product.getImagePath());
 
-        return productMapper.toProductResponseDto(product, imageSrcPath, count);
+        return productMapper.toProductDetail(product, imageSrcPath, count);
     }
 
     /**

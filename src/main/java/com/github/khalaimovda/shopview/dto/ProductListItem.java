@@ -10,7 +10,7 @@ import lombok.Data;
 import java.math.BigDecimal;
 
 @Data
-public class ProductListResponseDto {
+public class ProductListItem {
     @NotNull
     @Min(1L)
     private Long id;

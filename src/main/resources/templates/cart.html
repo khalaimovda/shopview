@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <link rel="stylesheet" th:href="@{/css/cart-styles.css}"/>
+  <title>Cart</title>
+</head>
+<body>
+
+<header>
+  <div class="navbar">
+    <button class="navbar-item">
+      Заказы
+    </button>
+    <button class="navbar-item">
+      Каталог
+    </button>
+  </div>
+</header>
+
+<main th:if="${cart != null and not #lists.isEmpty(cart.products)}">
+  <div class="products">
+    <div class="product"
+         th:each="product : ${cart.products}"
+         th:with="productId=${product.id}"
+         th:data-product-id="${productId}"
+    >
+      <div class="product-name-price">
+        <div class="product-name">
+          <a th:href="@{/products/{id}(id=${product.id})}">
+            <span th:text="${product.name}">Наименование товара</span>
+          </a>
+        </div>
+        <span class="product-price">Цена за единицу: <span th:text="${product.price}">1500</span> ₽</span>
+      </div>
+      
+      <div class="product-count">
+        <div class="product-count-remove">
+          <button class="product-count-remove-btn">Удалить</button>
+        </div>
+        <div class="product-count-regulation">
+          <button class="product-count-regulation-stepper decrement">−</button>
+          <span class="product-count-regulation-value" th:text="${product.count}">1</span>
+          <button class="product-count-regulation-stepper increment">+</button>
+        </div>
+        <div class="product-total">
+          <div><span th:text="${product.totalPrice}"></span> ₽</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="order-total">
+    <div class="order"><button class="order-btn">Оформить заказ</button></div>
+    <div class="total"><span th:text="${cart.totalPrice}"></span> ₽</div>
+  </div>
+</main>
+
+<main th:unless="${cart != null and not #lists.isEmpty(cart.products)}">Ваша корзина пуста</main>
+
+<script th:src="@{/js/cart-scripts.js}"></script>
+
+</body>
+</html>

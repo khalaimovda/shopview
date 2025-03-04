@@ -10,7 +10,7 @@ import lombok.Data;
 import java.math.BigDecimal;
 
 @Data
-public class ProductResponseDto {
+public class CartProduct {
     @NotNull
     @Min(1L)
     private Long id;
@@ -18,17 +18,15 @@ public class ProductResponseDto {
     @NotBlank
     private String name;
 
-    @NotBlank
-    private String description;
-
-    @NotBlank
-    private String imagePath;
-
     @NotNull
     @DecimalMin("0.01")
     private BigDecimal price;
 
     @NotNull
-    @Min(0)
+    @Min(1)
     private Integer count;
+
+    @NotNull
+    @DecimalMin("0.01")
+    private BigDecimal totalPrice;
 }

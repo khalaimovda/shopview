@@ -1,8 +1,9 @@
 package com.github.khalaimovda.shopview.mapper;
 
 import com.github.khalaimovda.shopview.dto.ProductCreateForm;
-import com.github.khalaimovda.shopview.dto.ProductListResponseDto;
-import com.github.khalaimovda.shopview.dto.ProductResponseDto;
+import com.github.khalaimovda.shopview.dto.ProductDetail;
+import com.github.khalaimovda.shopview.dto.ProductListItem;
+import com.github.khalaimovda.shopview.dto.CartProduct;
 import com.github.khalaimovda.shopview.model.Product;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
@@ -17,13 +18,13 @@ public interface ProductMapper {
         @Mapping(source = "imagePath", target = "imagePath"),
         @Mapping(source = "count", target = "count")
     })
-    ProductListResponseDto toProductListResponseDto(Product product, String imagePath, Integer count);
+    ProductListItem toProductListItem(Product product, String imagePath, Integer count);
 
     @Mappings({
         @Mapping(source = "imagePath", target = "imagePath"),
         @Mapping(source = "count", target = "count")
     })
-    ProductResponseDto toProductResponseDto(Product product, String imagePath, Integer count);
+    ProductDetail toProductDetail(Product product, String imagePath, Integer count);
 
     @Mappings({
         @Mapping(target = "id", ignore = true),
@@ -31,4 +32,9 @@ public interface ProductMapper {
         @Mapping(source = "imagePath", target = "imagePath"),
     })
     Product toProduct(ProductCreateForm form, String imagePath);
+
+    @Mappings({
+        @Mapping(target = "totalPrice", expression = "java(product.getPrice().multiply(java.math.BigDecimal.valueOf(count)))"),
+    })
+    CartProduct toCartProduct(Product product, Integer count);
 }

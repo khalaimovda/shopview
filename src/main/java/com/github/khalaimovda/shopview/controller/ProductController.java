@@ -2,8 +2,8 @@ package com.github.khalaimovda.shopview.controller;
 
 
 import com.github.khalaimovda.shopview.dto.ProductCreateForm;
-import com.github.khalaimovda.shopview.dto.ProductListResponseDto;
-import com.github.khalaimovda.shopview.dto.ProductResponseDto;
+import com.github.khalaimovda.shopview.dto.ProductDetail;
+import com.github.khalaimovda.shopview.dto.ProductListItem;
 import com.github.khalaimovda.shopview.service.ProductService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
@@ -13,7 +13,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.annotation.Validated;
@@ -33,7 +32,7 @@ public class ProductController {
         @PageableDefault(sort = "id", direction = Sort.Direction.DESC) Pageable pageable,
         @RequestParam(value = "search", defaultValue = "") String search
     ) {
-        Page<ProductListResponseDto> page = productService.getAllProducts(search, pageable);
+        Page<ProductListItem> page = productService.getAllProducts(search, pageable);
         model.addAttribute("page", page);
         return "products";
     }
@@ -46,7 +45,7 @@ public class ProductController {
 
     @GetMapping("/{id}")
     public String getProductById(Model model, @PathVariable("id") @Min(1L) Long id) {
-        ProductResponseDto product = productService.getProductById(id);
+        ProductDetail product = productService.getProductById(id);
         model.addAttribute("product", product);
         return "product";
     }
