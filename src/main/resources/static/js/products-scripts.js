@@ -42,7 +42,7 @@ const addProductToCart = (cart) => {
 
   const productId = cart.dataset.productId;
 
-  fetch(`/order/add/${productId}`, {method: 'POST'})
+  fetch(`/cart/add/${productId}`, {method: 'POST'})
   .then(response => {
     if (!response.ok) {
       throw new Error(`Error: ${response.statusText}`);
@@ -68,7 +68,7 @@ const removeProductFromCart = (cart) => {
 
   const productId = cart.dataset.productId;
 
-  fetch(`/order/remove/${productId}`, {method: 'DELETE'})
+  fetch(`/cart/remove/${productId}`, {method: 'DELETE'})
   .then(response => {
     if (!response.ok) {
       throw new Error(`Error: ${response.statusText}`);
@@ -91,7 +91,7 @@ const incrementProductQuantityInCart = (cart) => {
 
   const productId = cart.dataset.productId;
 
-  fetch(`/order/add/${productId}`, {method: 'POST'})
+  fetch(`/cart/add/${productId}`, {method: 'POST'})
   .then(response => {
     if (!response.ok) {
       throw new Error(`Error: ${response.statusText}`);
@@ -112,7 +112,7 @@ const decrementProductQuantityInCart = (cart) => {
 
   const productId = cart.dataset.productId;
 
-  fetch(`/order/decrease/${productId}`, {method: 'POST'})
+  fetch(`/cart/decrease/${productId}`, {method: 'POST'})
   .then(response => {
     if (!response.ok) {
       throw new Error(`Error: ${response.statusText}`);
