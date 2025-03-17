@@ -3,11 +3,11 @@ package com.github.khalaimovda.shopview.service;
 import com.github.khalaimovda.shopview.dto.OrderDetail;
 import com.github.khalaimovda.shopview.dto.OrderListItem;
 import com.github.khalaimovda.shopview.dto.ProductOfOrder;
+import com.github.khalaimovda.shopview.mapper.OrderMapper;
 import com.github.khalaimovda.shopview.mapper.ProductMapper;
 import com.github.khalaimovda.shopview.model.Order;
 import com.github.khalaimovda.shopview.model.OrderProduct;
 import com.github.khalaimovda.shopview.model.Product;
-import com.github.khalaimovda.shopview.repository.OrderProductRepository;
 import com.github.khalaimovda.shopview.repository.OrderRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -22,26 +22,13 @@ import java.util.Optional;
 public class OrderServiceImpl implements OrderService {
 
     private final OrderRepository orderRepository;
-    private final OrderProductRepository orderProductRepository;
     private final ProductMapper productMapper;
+    private final OrderMapper orderMapper;
 
     @Override
     public List<OrderListItem> getAllOrders() {
-        // todo: Вот тут надо подумать, как затянуть
-        List<Order> orders = orderRepository.findAll();
-
-        // todo: Здесь явно лучше сразу писать сырой cql
-        // todo: Соритровка по убыванию orderId
-//        List<OrderProduct> orderProducts = orderProductRepository.findAllByOrderContaining(orders);
-//        orders.stream().map()
-
-        // todo: Нужно будет сделать mapper, но пока ручками
-        return orders.stream().map(order -> {
-            OrderListItem orderListItem = new OrderListItem();
-            orderListItem.setId(order.getId());
-            orderListItem.setPrice(new BigDecimal("13.25")); // todo: Считать нормально
-            return orderListItem;
-        }).toList();
+        List<Order> orders = orderRepository.findAllByIsActiveFalseOrderByIdDesc();
+        return orders.stream().map(this::getOrderDetail).map(orderMapper::toOrderListItem).toList();
     }
 
     @Override
