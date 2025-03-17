@@ -12,4 +12,5 @@ import java.util.List;
 @Repository
 public interface OrderProductRepository extends JpaRepository<OrderProduct, OrderProductId> {
     List<OrderProduct> findAllByOrderAndProductIn(Order order, List<Product> products);
+    List<OrderProduct> findAllByOrderIn(List<Order> orders);
 }

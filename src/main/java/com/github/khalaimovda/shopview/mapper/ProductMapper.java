@@ -1,9 +1,9 @@
 package com.github.khalaimovda.shopview.mapper;
 
+import com.github.khalaimovda.shopview.dto.ProductOfOrder;
 import com.github.khalaimovda.shopview.dto.ProductCreateForm;
 import com.github.khalaimovda.shopview.dto.ProductDetail;
 import com.github.khalaimovda.shopview.dto.ProductListItem;
-import com.github.khalaimovda.shopview.dto.CartProduct;
 import com.github.khalaimovda.shopview.model.Product;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
@@ -36,5 +36,5 @@ public interface ProductMapper {
     @Mappings({
         @Mapping(target = "totalPrice", expression = "java(product.getPrice().multiply(java.math.BigDecimal.valueOf(count)))"),
     })
-    CartProduct toCartProduct(Product product, Integer count);
+    ProductOfOrder toCartProduct(Product product, Integer count);
 }

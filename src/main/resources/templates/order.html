@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <link rel="stylesheet" th:href="@{/css/order-styles.css}"/>
+    <title>Order</title>
+</head>
+<body>
+
+<header>
+    <div class="navbar">
+        <a th:href="@{/orders}" class="navbar-item">Заказы</a>
+        <a th:href="@{/products}" class="navbar-item">Каталог</a>
+    </div>
+</header>
+
+<main th:if="${order != null and not #lists.isEmpty(order.products)}">
+    <div class="products">
+        <div class="product"
+             th:each="product : ${order.products}"
+             th:with="productId=${product.id}"
+             th:data-product-id="${productId}">
+
+            <div class="product-name-price">
+                <div class="product-name">
+                    <a th:href="@{/products/{id}(id=${product.id})}">
+                        <span th:text="${product.name}">Наименование товара</span>
+                    </a>
+                </div>
+                <span class="product-price">
+          Цена за единицу: <span th:text="${product.price}"></span>₽
+        </span>
+            </div>
+
+            <div class="product-details">
+        <span class="product-quantity">
+          Количество: <span th:text="${product.count}"></span>
+        </span>
+                <span class="product-total">
+          Итого: <span th:text="${product.totalPrice}"></span> ₽
+        </span>
+            </div>
+        </div>
+    </div>
+
+    <div class="order-total">
+        <div class="total">
+            Общая сумма: <span th:text="${order.totalPrice}"></span>₽
+        </div>
+    </div>
+</main>
+
+<main th:unless="${order != null and not #lists.isEmpty(order.products)}">
+    Данный заказ не содержит товаров
+</main>
+
+<script th:src="@{/js/order-scripts.js}"></script>
+</body>
+</html>

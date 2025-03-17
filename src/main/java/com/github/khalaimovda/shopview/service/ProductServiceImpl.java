@@ -1,6 +1,5 @@
 package com.github.khalaimovda.shopview.service;
 
-import com.github.khalaimovda.shopview.dto.CartProduct;
 import com.github.khalaimovda.shopview.dto.ProductCreateForm;
 import com.github.khalaimovda.shopview.dto.ProductDetail;
 import com.github.khalaimovda.shopview.dto.ProductListItem;

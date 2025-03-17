@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <link rel="stylesheet" th:href="@{/css/orders-styles.css}"/>
+    <title>Список заказов</title>
+</head>
+<body>
+
+<header>
+    <div class="navbar">
+        <a th:href="@{/products}" class="navbar-item">Каталог</a>
+        <a th:href="@{/cart}" class="navbar-item">Корзина</a>
+    </div>
+</header>
+
+<main th:if="${orders != null and not #lists.isEmpty(orders)}">
+    <div class="orders">
+        <a class="order-item"
+           th:each="order : ${orders}"
+           th:href="@{/orders/{id}(id=${order.id})}"
+        >
+            <span class="order-title" th:text="'Заказ #' + ${order.id}"></span>
+            <span class="order-total" th:text="${order.price} + ' ₽'"></span>
+        </a>
+    </div>
+</main>
+
+<main th:unless="${orders != null and not #lists.isEmpty(orders)}">
+    Нет оформленных заказов
+</main>
+
+</body>
+</html>

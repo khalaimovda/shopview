@@ -8,13 +8,13 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Data
-public class Cart {
+public class OrderDetail {
 
     @NotNull
     private Long oderId;
 
     @NotNull
-    private List<CartProduct> products = new ArrayList<>();
+    private List<ProductOfOrder> products = new ArrayList<>();
 
     @NotNull
     private BigDecimal totalPrice = BigDecimal.ZERO;

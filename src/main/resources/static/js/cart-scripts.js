@@ -104,19 +104,19 @@ document.addEventListener('DOMContentLoaded', () => {
       });
   }
 
-  // Place order (placeholder – adjust as needed for your backend)
+  // Checkout (place order)
   function placeOrder() {
-    fetch('/order/create', { method: 'POST' })
+    fetch('/cart/checkout', { method: 'POST' })
       .then(response => {
         if (!response.ok) {
           throw new Error(`Error placing order: ${response.statusText}`);
         }
-        alert('Order placed successfully!');
-        window.location.reload();
+        alert('Заказ успешно оформлен!');
+        window.location.href = "/orders";
       })
       .catch(error => {
         console.error('Error:', error);
-        alert('Error placing order');
+        alert('Ошибка при оформлении заказа!');
       });
   }
 

@@ -1,7 +1,6 @@
 package com.github.khalaimovda.shopview.service;
 
-import com.github.khalaimovda.shopview.dto.Cart;
-import com.github.khalaimovda.shopview.dto.CartProduct;
+import com.github.khalaimovda.shopview.dto.OrderDetail;
 import com.github.khalaimovda.shopview.mapper.ProductMapper;
 import com.github.khalaimovda.shopview.model.Order;
 import com.github.khalaimovda.shopview.model.OrderProduct;
@@ -13,8 +12,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.math.BigDecimal;
-import java.util.Comparator;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 
@@ -22,30 +19,19 @@ import java.util.Optional;
 @Service
 @RequiredArgsConstructor
 public class CartServiceImpl implements CartService {
+
     private final OrderRepository orderRepository;
     private final ProductRepository productRepository;
     private final OrderProductService orderProductService;
+    private final OrderService orderService;
     private final OrderProductRepository orderProductRepository;
     private final ProductMapper productMapper;
 
     @Override
     @Transactional
-    public Optional<Cart> getCart() {
+    public Optional<OrderDetail> getCart() {
         Optional<Order> optionalOrder = orderRepository.findByIsActiveTrue();
-        return optionalOrder.map(order -> {
-            Cart cart = new Cart();
-            cart.setOderId(order.getId());
-            BigDecimal totalPrice = BigDecimal.ZERO;
-            for (OrderProduct orderProduct : order.getOrderProducts()) {
-                Product product = orderProduct.getProduct();  // todo: Проверить количество запросов
-                CartProduct cartProduct = productMapper.toCartProduct(product, orderProduct.getCount());
-                cart.getProducts().add(cartProduct);
-                totalPrice = totalPrice.add(cartProduct.getTotalPrice());
-            }
-            cart.getProducts().sort(Comparator.comparing(CartProduct::getName));
-            cart.setTotalPrice(totalPrice);
-            return cart;
-        });
+        return optionalOrder.map(orderService::getOrderDetail);
     }
 
     @Override
@@ -70,6 +56,16 @@ public class CartServiceImpl implements CartService {
         Product product = getProductByIdOrNoSuchElementException(productId);
         Order activeOrder = getActiveOrderOrNoSuchElementException();
         orderProductService.removeProductFromOrder(activeOrder, product);
+    }
+
+    @Override
+    @Transactional
+    public void checkout() {
+        // todo: Проверка, что корзина не пустая
+        Optional<Order> optionalOrder = orderRepository.findByIsActiveTrue();
+        Order order = optionalOrder.orElseThrow(() -> new NoSuchElementException("Cart does not exist"));
+        order.setIsActive(false);
+        orderRepository.save(order);
     }
 
     @Transactional

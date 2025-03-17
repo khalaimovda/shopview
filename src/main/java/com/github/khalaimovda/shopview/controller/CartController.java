@@ -1,6 +1,6 @@
 package com.github.khalaimovda.shopview.controller;
 
-import com.github.khalaimovda.shopview.dto.Cart;
+import com.github.khalaimovda.shopview.dto.OrderDetail;
 import com.github.khalaimovda.shopview.service.CartService;
 import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
@@ -21,16 +21,9 @@ public class CartController {
 
     @GetMapping("")
     public String getCart(Model model) {
-        Optional<Cart> cart = cartService.getCart();
+        Optional<OrderDetail> cart = cartService.getCart();
         model.addAttribute("cart", cart.orElse(null));
         return "cart";
-        // todo: Что нам нужно в cart: orderId; List<Product> (без description, без imagePath, но с totalPrice); totalPrice
-        // Так как мы должны иметь возможноть регулировать доваление товаров в корзине тоже
-        // то, видимо, все totalPrice (в том числе и финальный) надо считать на фронтенде
-
-        // Наверное, здесь, я не пойду по окончательному хорошему пути
-        // Пусть при первом запросе он все считает и возвращает. А при последующих --нет
-        // Возможно, можно добавить перед оформление заказа get-запрос на финальную цену заказа и, если оно совпадает, то формировать заказ
     }
 
     @PostMapping("/add/{productId}")
@@ -51,4 +44,9 @@ public class CartController {
         cartService.removeProductFromCart(productId);
     }
 
+    @PostMapping("/checkout")
+    @ResponseStatus(HttpStatus.OK)
+    public void checkout() {
+        cartService.checkout();
+    }
 }
