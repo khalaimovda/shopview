@@ -26,8 +26,6 @@ import java.util.*;
 @RequiredArgsConstructor
 public class ProductServiceImpl implements ProductService {
 
-    // todo: ActiveOrder нужно закэшировать!
-
     private final ProductRepository productRepository;
     private final OrderRepository orderRepository;
     private final OrderProductRepository orderProductRepository;

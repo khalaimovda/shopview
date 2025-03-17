@@ -9,13 +9,21 @@ spring:
     transaction-isolation: 2
   liquibase:
     change-log: "classpath:/db/changelog/db.changelog-master.xml"
-
-  # Show sql
   jpa:
     show-sql: true
     properties:
       hibernate:
         format_sql: true
+
+      # https://stackoverflow.com/a/54774762
+      javax:
+        persistence:
+          sharedCache:
+            mode: ENABLE_SELECTIVE
+        cache:
+          use_second_level_cache: true
+          region:
+            factory_class: org.hibernate.cache.ehcache.EhCacheRegionFactory
 
 app:
   images:

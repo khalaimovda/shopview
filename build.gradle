@@ -32,6 +32,8 @@ dependencies {
 	implementation 'jakarta.validation:jakarta.validation-api'
 	implementation 'org.hibernate.validator:hibernate-validator'
 	implementation 'org.mapstruct:mapstruct:1.6.3'
+	implementation 'org.hibernate:hibernate-jcache:6.2.9.Final'
+	implementation 'org.ehcache:ehcache:3.10.8:jakarta'
 	compileOnly 'org.projectlombok:lombok'
 	runtimeOnly 'org.postgresql:postgresql'
 	annotationProcessor 'org.projectlombok:lombok'

@@ -1,10 +1,8 @@
 package com.github.khalaimovda.shopview.service;
 
 import com.github.khalaimovda.shopview.dto.OrderDetail;
-import com.github.khalaimovda.shopview.mapper.ProductMapper;
 import com.github.khalaimovda.shopview.model.Order;
 import com.github.khalaimovda.shopview.model.Product;
-import com.github.khalaimovda.shopview.repository.OrderProductRepository;
 import com.github.khalaimovda.shopview.repository.OrderRepository;
 import com.github.khalaimovda.shopview.repository.ProductRepository;
 import lombok.RequiredArgsConstructor;
@@ -24,8 +22,6 @@ public class CartServiceImpl implements CartService {
     private final ProductRepository productRepository;
     private final OrderProductService orderProductService;
     private final OrderService orderService;
-    private final OrderProductRepository orderProductRepository;
-    private final ProductMapper productMapper;
 
     @Override
     @Transactional
