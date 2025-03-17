@@ -3,7 +3,6 @@ package com.github.khalaimovda.shopview.service;
 import com.github.khalaimovda.shopview.dto.OrderDetail;
 import com.github.khalaimovda.shopview.mapper.ProductMapper;
 import com.github.khalaimovda.shopview.model.Order;
-import com.github.khalaimovda.shopview.model.OrderProduct;
 import com.github.khalaimovda.shopview.model.Product;
 import com.github.khalaimovda.shopview.repository.OrderProductRepository;
 import com.github.khalaimovda.shopview.repository.OrderRepository;
@@ -12,6 +11,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 
@@ -61,9 +61,9 @@ public class CartServiceImpl implements CartService {
     @Override
     @Transactional
     public void checkout() {
-        // todo: Проверка, что корзина не пустая
         Optional<Order> optionalOrder = orderRepository.findByIsActiveTrue();
         Order order = optionalOrder.orElseThrow(() -> new NoSuchElementException("Cart does not exist"));
+        validateCartIsNotEmpty(order);
         order.setIsActive(false);
         orderRepository.save(order);
     }
@@ -86,5 +86,12 @@ public class CartServiceImpl implements CartService {
         return optionalActiveOrder.orElseThrow(
             () -> new NoSuchElementException("Active order is not found")
         );
+    }
+
+    private void validateCartIsNotEmpty(Order order) {
+        OrderDetail orderDetail = orderService.getOrderDetail(order);
+        if (orderDetail.getTotalPrice().compareTo(BigDecimal.ZERO) == 0) {
+            throw new IllegalStateException("Cart is empty");
+        }
     }
 }

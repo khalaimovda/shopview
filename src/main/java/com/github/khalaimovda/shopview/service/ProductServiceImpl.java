@@ -66,8 +66,6 @@ public class ProductServiceImpl implements ProductService {
         productRepository.save(product);
     }
 
-    // todo: Я случайно удалил класс ProductResponse. Его надо восстановить
-
     @Override
     public ProductDetail getProductById(Long id) {
         Optional<Product> optionalProduct = productRepository.findById(id);

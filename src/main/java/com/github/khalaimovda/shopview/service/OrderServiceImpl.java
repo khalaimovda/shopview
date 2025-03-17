@@ -56,7 +56,7 @@ public class OrderServiceImpl implements OrderService {
         orderDetail.setOderId(order.getId());
         BigDecimal totalPrice = BigDecimal.ZERO;
         for (OrderProduct orderProduct : order.getOrderProducts()) {
-            Product product = orderProduct.getProduct();  // todo: Проверить количество запросов
+            Product product = orderProduct.getProduct();
             ProductOfOrder cartProduct = productMapper.toCartProduct(product, orderProduct.getCount());
             orderDetail.getProducts().add(cartProduct);
             totalPrice = totalPrice.add(cartProduct.getTotalPrice());
