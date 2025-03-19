@@ -1,13 +1,12 @@
 package com.github.khalaimovda.shopview.service;
 
 import com.github.khalaimovda.shopview.config.ImageServiceProperties;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.io.TempDir;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mock.web.MockMultipartFile;
-import org.springframework.util.FileSystemUtils;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
@@ -18,29 +17,20 @@ import java.security.SecureRandom;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-@SpringBootTest(
-    classes = ImageFileSystemService.class,
-    properties = {
-        "app.images.upload-dir=uploads/images",
-        "app.images.base-url=/images/",
-    }
-)
-class ImageServiceTest {
+@ExtendWith(MockitoExtension.class)
+class ImageFileSystemServiceTest {
+    @TempDir
+    private Path tempDir;
 
-    @Autowired
     private ImageServiceProperties properties;
-
-    @Autowired
     private ImageService imageService;
 
     @BeforeEach
     void setup() throws IOException {
-        Files.createDirectories(Paths.get(properties.getUploadDir()));
-    }
-
-    @AfterEach
-    void cleanup() throws IOException {
-        FileSystemUtils.deleteRecursively(Paths.get(properties.getUploadDir()));
+        properties = new ImageServiceProperties();
+        properties.setUploadDir(tempDir.toString());
+        properties.setBaseUrl("/images/");
+        imageService = new ImageFileSystemService(properties);
     }
 
     @Test
