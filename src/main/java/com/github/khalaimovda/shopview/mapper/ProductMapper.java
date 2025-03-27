@@ -36,5 +36,5 @@ public interface ProductMapper {
     @Mappings({
         @Mapping(target = "totalPrice", expression = "java(product.getPrice().multiply(java.math.BigDecimal.valueOf(count)))"),
     })
-    ProductOfOrder toCartProduct(Product product, Integer count);
+    ProductOfOrder toProductOfOrder(Product product, Integer count);
 }
