@@ -2,7 +2,6 @@ package com.github.khalaimovda.shopview.service;
 
 import com.github.khalaimovda.shopview.dto.OrderDetail;
 import com.github.khalaimovda.shopview.dto.OrderListItem;
-import com.github.khalaimovda.shopview.dto.ProductOfOrder;
 import com.github.khalaimovda.shopview.mapper.OrderMapper;
 import com.github.khalaimovda.shopview.mapper.ProductMapper;
 import com.github.khalaimovda.shopview.model.Order;
@@ -16,7 +15,6 @@ import org.mockito.Mock;
 import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
@@ -72,14 +70,7 @@ public class OrderServiceTest {
         List<Product> products = generateRandomProducts(5);
         Order order = generateRandomNotActiveOrder(products);
         when(orderRepository.findById(anyLong())).thenReturn(Optional.of(order));
-
-        OrderDetail expectedOrderDetail = new OrderDetail();
-        expectedOrderDetail.setOderId(order.getId());
-        expectedOrderDetail.setProducts(
-            getProductOfOrderList(order).stream()
-            .sorted(Comparator.comparing(ProductOfOrder::getName)).toList() // Sort products by name
-        );
-        expectedOrderDetail.setTotalPrice(calculateOrderPrice(order));
+        OrderDetail expectedOrderDetail = getOrderDetail(order);
 
         // Act
         Optional<OrderDetail> optionalOrderDetail = orderService.getOrderDetail(order.getId());
@@ -98,14 +89,7 @@ public class OrderServiceTest {
         // Arrange
         List<Product> products = generateRandomProducts(5);
         Order order = generateRandomNotActiveOrder(products);
-
-        OrderDetail expectedOrderDetail = new OrderDetail();
-        expectedOrderDetail.setOderId(order.getId());
-        expectedOrderDetail.setProducts(
-            getProductOfOrderList(order).stream()
-                .sorted(Comparator.comparing(ProductOfOrder::getName)).toList() // Sort products by name
-        );
-        expectedOrderDetail.setTotalPrice(calculateOrderPrice(order));
+        OrderDetail expectedOrderDetail = getOrderDetail(order);
 
         // Act
         OrderDetail orderDetail = orderService.getOrderDetail(order);

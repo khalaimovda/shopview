@@ -1,5 +1,6 @@
 package com.github.khalaimovda.shopview.utils;
 
+import com.github.khalaimovda.shopview.dto.OrderDetail;
 import com.github.khalaimovda.shopview.dto.ProductOfOrder;
 import com.github.khalaimovda.shopview.model.Order;
 import com.github.khalaimovda.shopview.model.OrderProduct;
@@ -7,6 +8,7 @@ import com.github.khalaimovda.shopview.model.OrderProductId;
 import com.github.khalaimovda.shopview.model.Product;
 
 import java.math.BigDecimal;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Random;
 
@@ -73,5 +75,16 @@ public class OrderUtils {
                 return productOfOrder;
             }
         ).toList();
+    }
+
+    public static OrderDetail getOrderDetail(Order order) {
+        OrderDetail orderDetail = new OrderDetail();
+        orderDetail.setOderId(order.getId());
+        orderDetail.setProducts(
+            getProductOfOrderList(order).stream()
+                .sorted(Comparator.comparing(ProductOfOrder::getName)).toList() // Sort products by name
+        );
+        orderDetail.setTotalPrice(calculateOrderPrice(order));
+        return orderDetail;
     }
 }
