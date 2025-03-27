@@ -12,6 +12,9 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Random;
 
+import static com.github.khalaimovda.shopview.utils.OrderProductUtils.calculateTotalPrice;
+import static com.github.khalaimovda.shopview.utils.OrderProductUtils.generateRandomOrderProducts;
+
 public class OrderUtils {
 
     private static final Random random = new Random();
@@ -20,23 +23,7 @@ public class OrderUtils {
         Order order = new Order();
         order.setId(random.nextLong(1, Long.MAX_VALUE));
         order.setIsActive(false);
-
-        List<OrderProduct> orderProducts = products.stream()
-            .map(product -> {
-                OrderProductId orderProductId = new OrderProductId();
-                orderProductId.setOrderId(order.getId());
-                orderProductId.setProductId(product.getId());
-
-                OrderProduct orderProduct = new OrderProduct();
-                orderProduct.setId(orderProductId);
-                orderProduct.setProduct(product);
-                orderProduct.setOrder(order);
-                orderProduct.setCount(random.nextInt(1, 10));
-
-                return orderProduct;
-            }).toList();
-        order.setOrderProducts(orderProducts);
-
+        order.setOrderProducts(generateRandomOrderProducts(order, products));
         return order;
     }
 
@@ -51,13 +38,7 @@ public class OrderUtils {
     }
 
     public static BigDecimal calculateOrderPrice(Order order) {
-        return order.getOrderProducts().stream().map(
-            orderProduct -> {
-                BigDecimal price = orderProduct.getProduct().getPrice();
-                Integer count = orderProduct.getCount();
-                return price.multiply(new BigDecimal(count));
-            }
-        ).reduce(BigDecimal.ZERO, BigDecimal::add);
+        return calculateTotalPrice(order.getOrderProducts());
     }
 
     public static List<ProductOfOrder> getProductOfOrderList(Order order) {
