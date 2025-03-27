@@ -17,8 +17,6 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.transaction.support.TransactionSynchronization;
-import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.util.*;
 
@@ -32,6 +30,7 @@ public class ProductServiceImpl implements ProductService {
     private final ProductMapper productMapper;
     private final ImageService imageService;
     private final OrderProductService orderProductService;
+    private final ImageRollbackService imageRollbackService;
 
     @Override
     @Transactional(readOnly = true)
@@ -59,7 +58,7 @@ public class ProductServiceImpl implements ProductService {
     @Override
     public void createProduct(ProductCreateForm form) {
         String imagePath = imageService.saveImage(form.getImage());
-        registerImageRollback(imagePath);
+        imageRollbackService.registerImageRollback(imagePath);
         Product product = productMapper.toProduct(form, imagePath);
         productRepository.save(product);
     }
@@ -80,24 +79,5 @@ public class ProductServiceImpl implements ProductService {
         String imageSrcPath = imageService.getImageSrcPath(product.getImagePath());
 
         return productMapper.toProductDetail(product, imageSrcPath, count);
-    }
-
-    /**
-     * Register TransactionSynchronization which will remove image if transaction is rolled back
-     */
-    private void registerImageRollback(String imagePath) {
-        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
-            @Override
-            public void afterCompletion(int status) {
-                if (status == TransactionSynchronization.STATUS_ROLLED_BACK) {
-                    imageService.deleteImage(imagePath);
-                }
-            }
-            @Override public void suspend() {}
-            @Override public void resume() {}
-            @Override public void flush() {}
-            @Override public void beforeCommit(boolean readOnly) {}
-            @Override public void beforeCompletion() {}
-        });
     }
 }
