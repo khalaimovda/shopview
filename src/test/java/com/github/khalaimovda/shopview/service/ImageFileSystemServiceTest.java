@@ -13,8 +13,8 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.security.SecureRandom;
 
+import static com.github.khalaimovda.shopview.utils.ImageUtils.createRandomBytes;
 import static org.junit.jupiter.api.Assertions.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -71,12 +71,5 @@ class ImageFileSystemServiceTest {
 
         imageService.deleteImage("test_image.jpg");
         assertFalse(Files.exists(imagePath));
-    }
-
-    private byte[] createRandomBytes() {
-        SecureRandom random = new SecureRandom();
-        byte[] bytes = new byte[1024];
-        random.nextBytes(bytes);
-        return bytes;
     }
 }
