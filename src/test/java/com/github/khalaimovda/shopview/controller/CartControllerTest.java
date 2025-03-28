@@ -28,8 +28,6 @@ public class CartControllerTest {
     @MockitoBean
     private CartService cartService;
 
-//    private final OrderMapper orderMapper = Mappers.getMapper(OrderMapper.class);
-
     @Test
     void testGetCart() throws Exception {
         OrderDetail orderDetail =  getOrderDetail(generateRandomActiveOrder(generateRandomProducts(5)));
