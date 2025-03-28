@@ -1,0 +1,26 @@
+services:
+  db:
+    image: postgres:17.4
+    restart: always
+    environment:
+      POSTGRES_DB: shop
+      POSTGRES_USER: username
+      POSTGRES_PASSWORD: password
+    ports:
+      - "5432:5432"
+    volumes:
+      - db-data:/var/lib/postgresql/data
+
+  shopview:
+    image: shopview:0.0.1-SNAPSHOT
+    restart: always
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/shop
+      SPRING_DATASOURCE_USERNAME: username
+      SPRING_DATASOURCE_PASSWORD: password
+      APP_IMAGES_UPLOAD_DIR: /tmp/uploads/images
+    ports:
+      - 8080:8080
+
+volumes:
+  db-data:

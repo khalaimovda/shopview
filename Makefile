@@ -20,3 +20,12 @@ images_copy:
 
 images_clean:
 	rm -rf uploads/images/*
+
+build_image:
+	./gradlew bootBuildImage
+
+start:
+	docker compose -f ./compose.yaml up -d
+
+stop:
+	docker compose -f ./compose.yaml down
