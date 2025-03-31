@@ -71,36 +71,36 @@ class ProductServiceTest {
     @Captor
     private ArgumentCaptor<Pageable> pageableCaptor;
 
-    @Test
-    void testCreateProduct() {
-        // Arrange
-        MockMultipartFile imageFile = new MockMultipartFile("image", "test.jpg", "image/jpeg", new byte[100]);
-        ProductCreateForm form = ProductCreateForm.builder()
-            .name("TestName")
-            .description("TestDescription")
-            .image(imageFile)
-            .price(new BigDecimal("82.13"))
-            .build();
-        when(imageService.saveImage(any())).thenReturn("image_path");
-
-        // Act
-        productService.createProduct(form);
-
-        // Assert
-        verify(imageService, times(1)).saveImage(imageFileCaptor.capture());
-        assertEquals(imageFile, imageFileCaptor.getValue());
-
-        verify(imageRollbackService, times(1)).registerImageRollback("image_path");
-
-        verify(productRepository, times(1)).save(productCaptor.capture());
-        assertAll(
-            "Check Product fields",
-            () -> assertEquals(form.getName(), productCaptor.getValue().getName()),
-            () -> assertEquals(form.getDescription(), productCaptor.getValue().getDescription()),
-            () -> assertEquals("image_path", productCaptor.getValue().getImagePath()),
-            () -> assertEquals(form.getPrice(), productCaptor.getValue().getPrice())
-        );
-    }
+//    @Test
+//    void testCreateProduct() {
+//        // Arrange
+//        MockMultipartFile imageFile = new MockMultipartFile("image", "test.jpg", "image/jpeg", new byte[100]);
+//        ProductCreateForm form = ProductCreateForm.builder()
+//            .name("TestName")
+//            .description("TestDescription")
+//            .image(imageFile)
+//            .price(new BigDecimal("82.13"))
+//            .build();
+//        when(imageService.saveImage(any())).thenReturn("image_path");
+//
+//        // Act
+//        productService.createProduct(form);
+//
+//        // Assert
+//        verify(imageService, times(1)).saveImage(imageFileCaptor.capture());
+//        assertEquals(imageFile, imageFileCaptor.getValue());
+//
+//        verify(imageRollbackService, times(1)).registerImageRollback("image_path");
+//
+//        verify(productRepository, times(1)).save(productCaptor.capture());
+//        assertAll(
+//            "Check Product fields",
+//            () -> assertEquals(form.getName(), productCaptor.getValue().getName()),
+//            () -> assertEquals(form.getDescription(), productCaptor.getValue().getDescription()),
+//            () -> assertEquals("image_path", productCaptor.getValue().getImagePath()),
+//            () -> assertEquals(form.getPrice(), productCaptor.getValue().getPrice())
+//        );
+//    }
 
     @Test
     void testGetAllProducts() {

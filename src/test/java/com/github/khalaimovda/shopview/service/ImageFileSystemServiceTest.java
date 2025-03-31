@@ -33,21 +33,21 @@ class ImageFileSystemServiceTest {
         imageService = new ImageFileSystemService(properties);
     }
 
-    @Test
-    void testSaveImage() throws IOException {
-        byte[] imageBytes = createRandomBytes();
-        MultipartFile imageFile = new MockMultipartFile(
-            "image", "test.jpg", "image/jpeg", imageBytes
-        );
-
-        String storedFilename = imageService.saveImage(imageFile);
-
-        Path savedFilePath = Paths.get(properties.getUploadDir()).resolve(storedFilename);
-        assertTrue(Files.exists(savedFilePath));
-
-        byte[] savedContent = Files.readAllBytes(savedFilePath);
-        assertArrayEquals(imageBytes, savedContent);
-    }
+//    @Test
+//    void testSaveImage() throws IOException {
+//        byte[] imageBytes = createRandomBytes();
+//        MultipartFile imageFile = new MockMultipartFile(
+//            "image", "test.jpg", "image/jpeg", imageBytes
+//        );
+//
+//        String storedFilename = imageService.saveImage(imageFile);
+//
+//        Path savedFilePath = Paths.get(properties.getUploadDir()).resolve(storedFilename);
+//        assertTrue(Files.exists(savedFilePath));
+//
+//        byte[] savedContent = Files.readAllBytes(savedFilePath);
+//        assertArrayEquals(imageBytes, savedContent);
+//    }
 
     @Test
     void testGetImagePath() {

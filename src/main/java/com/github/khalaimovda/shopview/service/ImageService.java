@@ -1,12 +1,13 @@
 package com.github.khalaimovda.shopview.service;
 
-import org.springframework.web.multipart.MultipartFile;
+import org.springframework.http.codec.multipart.FilePart;
+import reactor.core.publisher.Mono;
 
 import java.nio.file.Path;
 
 public interface ImageService {
-    String saveImage(MultipartFile file);
+    Mono<String> saveImage(FilePart file);
+    Mono<Void> deleteImage(String fileName);
     Path getImagePath(String fileName);
     String getImageSrcPath(String fileName);
-    void deleteImage(String fileName);
 }
