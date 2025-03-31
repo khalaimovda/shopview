@@ -7,7 +7,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.springframework.web.multipart.MultipartFile;
+import org.springframework.http.codec.multipart.FilePart;
 
 import java.math.BigDecimal;
 
@@ -23,7 +23,7 @@ public class ProductCreateForm {
     private String description;
 
     @NotNull
-    private MultipartFile image;
+    private FilePart image;
 
     @NotNull
     @DecimalMin("0.01")
