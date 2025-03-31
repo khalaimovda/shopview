@@ -18,16 +18,10 @@ spring:
     properties:
       hibernate:
         format_sql: true
-
-      # https://stackoverflow.com/a/54774762
-      javax:
-        persistence:
-          sharedCache:
-            mode: ENABLE_SELECTIVE
         cache:
           use_second_level_cache: true
           region:
-            factory_class: org.hibernate.cache.ehcache.EhCacheRegionFactory
+            factory_class: org.hibernate.cache.jcache.JCacheRegionFactory
 
 app:
   images:

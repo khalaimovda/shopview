@@ -10,6 +10,7 @@ import com.github.khalaimovda.shopview.model.OrderProduct;
 import com.github.khalaimovda.shopview.model.Product;
 import com.github.khalaimovda.shopview.repository.OrderRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -26,18 +27,21 @@ public class OrderServiceImpl implements OrderService {
     private final OrderMapper orderMapper;
 
     @Override
+    @Cacheable(value = "orders")
     public List<OrderListItem> getAllOrders() {
         List<Order> orders = orderRepository.findAllByIsActiveFalseOrderByIdDesc();
         return orders.stream().map(this::getOrderDetail).map(orderMapper::toOrderListItem).toList();
     }
 
     @Override
+    @Cacheable(value = "orders", key = "#id")
     public Optional<OrderDetail> getOrderDetail(Long id) {
         Optional<Order> optionalOrder = orderRepository.findById(id);
         return optionalOrder.map(this::getOrderDetail);
     }
 
     @Override
+    @Cacheable(value = "orders", key = "#order.id")
     public OrderDetail getOrderDetail(Order order) {
         OrderDetail orderDetail = new OrderDetail();
         orderDetail.setOderId(order.getId());

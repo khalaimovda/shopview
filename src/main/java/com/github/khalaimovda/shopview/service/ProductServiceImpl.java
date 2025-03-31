@@ -12,6 +12,8 @@ import com.github.khalaimovda.shopview.repository.OrderProductRepository;
 import com.github.khalaimovda.shopview.repository.OrderRepository;
 import com.github.khalaimovda.shopview.repository.ProductRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
@@ -55,6 +57,7 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Transactional
+    @CacheEvict(value = "products", allEntries = true)
     @Override
     public void createProduct(ProductCreateForm form) {
         String imagePath = imageService.saveImage(form.getImage());
@@ -63,6 +66,7 @@ public class ProductServiceImpl implements ProductService {
         productRepository.save(product);
     }
 
+    @Cacheable(value = "products", key = "#id")
     @Override
     public ProductDetail getProductById(Long id) {
         Optional<Product> optionalProduct = productRepository.findById(id);

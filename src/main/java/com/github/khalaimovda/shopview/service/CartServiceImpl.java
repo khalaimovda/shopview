@@ -6,6 +6,9 @@ import com.github.khalaimovda.shopview.model.Product;
 import com.github.khalaimovda.shopview.repository.OrderRepository;
 import com.github.khalaimovda.shopview.repository.ProductRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,6 +28,7 @@ public class CartServiceImpl implements CartService {
 
     @Override
     @Transactional
+    @Cacheable(value = "orders", key = "'cart'")
     public Optional<OrderDetail> getCart() {
         Optional<Order> optionalOrder = orderRepository.findByIsActiveTrue();
         return optionalOrder.map(orderService::getOrderDetail);
@@ -32,6 +36,10 @@ public class CartServiceImpl implements CartService {
 
     @Override
     @Transactional
+    @Caching(evict = {
+        @CacheEvict(value = "products", allEntries = true),
+        @CacheEvict(value = "orders", allEntries = true)
+    })
     public void addProductToCart(Long productId) {
         Product product = getProductByIdOrNoSuchElementException(productId);
         Order activeOrder = getOrCreateActiveOrder();
@@ -40,6 +48,10 @@ public class CartServiceImpl implements CartService {
 
     @Override
     @Transactional
+    @Caching(evict = {
+        @CacheEvict(value = "products", allEntries = true),
+        @CacheEvict(value = "orders", allEntries = true)
+    })
     public void decreaseProductInCart(Long productId) {
         Product product = getProductByIdOrNoSuchElementException(productId);
         Order activeOrder = getActiveOrderOrNoSuchElementException();
@@ -48,6 +60,10 @@ public class CartServiceImpl implements CartService {
 
     @Override
     @Transactional
+    @Caching(evict = {
+        @CacheEvict(value = "products", allEntries = true),
+        @CacheEvict(value = "orders", allEntries = true)
+    })
     public void removeProductFromCart(Long productId) {
         Product product = getProductByIdOrNoSuchElementException(productId);
         Order activeOrder = getActiveOrderOrNoSuchElementException();
@@ -56,6 +72,10 @@ public class CartServiceImpl implements CartService {
 
     @Override
     @Transactional
+    @Caching(evict = {
+        @CacheEvict(value = "products", allEntries = true),
+        @CacheEvict(value = "orders", allEntries = true)
+    })
     public void checkout() {
         Optional<Order> optionalOrder = orderRepository.findByIsActiveTrue();
         Order order = optionalOrder.orElseThrow(() -> new NoSuchElementException("Cart does not exist"));

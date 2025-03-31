@@ -6,6 +6,8 @@ import com.github.khalaimovda.shopview.model.OrderProductId;
 import com.github.khalaimovda.shopview.model.Product;
 import com.github.khalaimovda.shopview.repository.OrderProductRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -29,6 +31,10 @@ public class OrderProductServiceImpl implements OrderProductService {
 
     @Override
     @Transactional
+    @Caching(evict = {
+        @CacheEvict(value = "products", allEntries = true),
+        @CacheEvict(value = "orders", allEntries = true)
+    })
     public void addProductToOrder(Order order, Product product) {
         Optional<OrderProduct> orderProduct = orderProductRepository.findById(new OrderProductId(order.getId(), product.getId()));
         orderProduct.ifPresentOrElse(
@@ -42,6 +48,10 @@ public class OrderProductServiceImpl implements OrderProductService {
 
     @Override
     @Transactional
+    @Caching(evict = {
+        @CacheEvict(value = "products", allEntries = true),
+        @CacheEvict(value = "orders", allEntries = true)
+    })
     public void decreaseProductInOrder(Order order, Product product) {
         Optional<OrderProduct> orderProduct = orderProductRepository.findById(new OrderProductId(order.getId(), product.getId()));
         orderProduct.ifPresent((op) -> {
@@ -56,6 +66,10 @@ public class OrderProductServiceImpl implements OrderProductService {
 
     @Override
     @Transactional
+    @Caching(evict = {
+        @CacheEvict(value = "products", allEntries = true),
+        @CacheEvict(value = "orders", allEntries = true)
+    })
     public void removeProductFromOrder(Order order, Product product) {
         Optional<OrderProduct> orderProduct = orderProductRepository.findById(new OrderProductId(order.getId(), product.getId()));
         orderProduct.ifPresent(orderProductRepository::delete);
