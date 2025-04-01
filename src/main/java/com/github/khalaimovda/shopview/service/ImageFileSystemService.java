@@ -36,7 +36,7 @@ public class ImageFileSystemService implements ImageService {
         Path filePath = getImagePath(fileName);
         return file
             .transferTo(filePath)
-            .then(Mono.just(fileName));
+            .thenReturn(fileName);
     }
 
     @Override
