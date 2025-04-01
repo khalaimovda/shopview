@@ -13,18 +13,21 @@ public interface ProductRepository extends ReactiveCrudRepository<Product, Long>
     @Query("""
         SELECT COUNT(*) FROM products
         WHERE
-          LOWER(name) LIKE LOWER(:name) AND
-          LOWER(description) LIKE LOWER(:description);
+          (COALESCE(:name, '') = '' OR LOWER(name) LIKE LOWER(CONCAT('%', :name, '%'))) OR
+          (COALESCE(:description, '') = '' OR LOWER(description) LIKE LOWER(CONCAT('%', :description, '%')))
+        ;
     """)
     Mono<Long> countByNameOrDescriptionContaining(String name, String description);
 
     @Query("""
         SELECT * FROM products
         WHERE
-          LOWER(name) LIKE LOWER(:name) AND
-          LOWER(description) LIKE LOWER(:description)
+          (COALESCE(:name, '') = '' OR LOWER(name) LIKE LOWER(CONCAT('%', :name, '%'))) OR
+          (COALESCE(:description, '') = '' OR LOWER(description) LIKE LOWER(CONCAT('%', :description, '%')))
+        ORDER BY id DESC
         LIMIT :limit
-        OFFSET :offset"
+        OFFSET :offset
+        ;
     """)
     Flux<Product> findByNameOrDescriptionContaining(String name, String description, int limit, long offset);
 

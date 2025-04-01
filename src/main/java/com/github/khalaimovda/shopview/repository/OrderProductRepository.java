@@ -1,8 +1,8 @@
 package com.github.khalaimovda.shopview.repository;
 
-import com.github.khalaimovda.shopview.model.Order;
 import com.github.khalaimovda.shopview.model.OrderProduct;
-import com.github.khalaimovda.shopview.model.Product;
+import org.springframework.data.r2dbc.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.data.repository.reactive.ReactiveCrudRepository;
 import org.springframework.stereotype.Repository;
 import reactor.core.publisher.Flux;
@@ -12,6 +12,10 @@ import java.util.List;
 
 @Repository
 public interface OrderProductRepository extends ReactiveCrudRepository<OrderProduct, Long> {
-    Flux<OrderProduct> findAllByOrderIdAndProductIdIn(Long orderId, List<Long> productIds);
+
+    // Auto query building does not work for "IN" condition in react repo
+    @Query("SELECT * FROM order_product WHERE order_id = :orderId AND product_id IN (:productIds)")
+    Flux<OrderProduct> findAllByOrderIdAndProductIdIn(Long orderId, @Param("productIds") List<Long> productIds);
+
     Mono<OrderProduct> findByOrderIdAndProductId(Long orderId, Long productId);
 }

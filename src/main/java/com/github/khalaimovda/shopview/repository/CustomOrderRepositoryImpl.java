@@ -34,7 +34,7 @@ public class CustomOrderRepositoryImpl implements CustomOrderRepository {
             FROM orders AS o
             LEFT JOIN order_product AS op
               ON o.id = op.order_id
-            JOIN products AS p
+            LEFT JOIN products AS p
               ON op.product_id = p.id
             WHERE o.is_active = false;
             """
@@ -59,7 +59,7 @@ public class CustomOrderRepositoryImpl implements CustomOrderRepository {
                 FROM orders AS o
                 LEFT JOIN order_product AS op
                   ON o.id = op.order_id
-                JOIN products AS p
+                LEFT JOIN products AS p
                   ON op.product_id = p.id
                 WHERE o.id = :id;
                 """

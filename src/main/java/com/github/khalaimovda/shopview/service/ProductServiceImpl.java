@@ -4,7 +4,6 @@ import com.github.khalaimovda.shopview.dto.ProductCreateForm;
 import com.github.khalaimovda.shopview.dto.ProductDetail;
 import com.github.khalaimovda.shopview.dto.ProductListItem;
 import com.github.khalaimovda.shopview.mapper.ProductMapper;
-import com.github.khalaimovda.shopview.model.Order;
 import com.github.khalaimovda.shopview.model.OrderProduct;
 import com.github.khalaimovda.shopview.model.Product;
 import com.github.khalaimovda.shopview.repository.OrderProductRepository;
@@ -18,7 +17,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import reactor.core.publisher.Mono;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.NoSuchElementException;
 
 @Service
 @RequiredArgsConstructor
@@ -37,40 +38,31 @@ public class ProductServiceImpl implements ProductService {
         int limit = pageable.getPageSize();
         long offset = pageable.getOffset();
 
-        Mono<List<Product>> products = productRepository
-            .findByNameOrDescriptionContaining(contentSubstring, contentSubstring, limit, offset)
-            .collectList();
-
-        Mono<Long> totalCount = productRepository.countByNameOrDescriptionContaining(contentSubstring, contentSubstring);
-
-        Mono<Order> activeOrder = orderRepository.findByIsActiveTrue();
-
-        Mono<Map<Long, Integer>> productIdCountMap = activeOrder
-            .flatMap(order -> products
-                .flatMap(productList -> orderProductService
-                    .getProductIdCountMap(order.getId(), productList.stream().map(Product::getId).toList())))
-            .switchIfEmpty(Mono.just(new HashMap<>()));
-
-        Mono<List<ProductListItem>> resultProducts = products
-            .zipWith(productIdCountMap)
-            .map(tuple -> {
-                List<Product> productList = tuple.getT1();
-                Map<Long, Integer> map = tuple.getT2();
-                return productList.stream()
-                    .map(product -> {
-                        Integer count = map.getOrDefault(product.getId(), 0);
-                        String imageSrcPath = imageService.getImageSrcPath(product.getImagePath());
-                        return productMapper.toProductListItem(product,  imageSrcPath, count);
-                    }).toList();
-            });
-
-        return resultProducts
-            .zipWith(totalCount)
-            .map(tuple -> {
-                List<ProductListItem> productListItems = tuple.getT1();
-                long totalElements = tuple.getT2();
-                return new PageImpl<>(productListItems, pageable, totalElements);
-            });
+        return productRepository
+            .countByNameOrDescriptionContaining(contentSubstring, contentSubstring)
+            .flatMap(total -> productRepository
+                .findByNameOrDescriptionContaining(contentSubstring, contentSubstring, limit, offset)
+                .collectList()
+                .flatMap(products -> {
+                    if (products.isEmpty()) {
+                        return Mono.just(new PageImpl<>(List.of(), pageable, total));
+                    }
+                    return orderRepository
+                        .findByIsActiveTrue()
+                        .flatMap(cart -> orderProductService
+                            .getProductIdCountMap(cart.getId(), products.stream().map(Product::getId).toList())
+                        )
+                        .defaultIfEmpty(new HashMap<>())
+                        .map(map -> {
+                            List<ProductListItem> productListItems = products.stream().map(product -> {
+                                Integer count = map.getOrDefault(product.getId(), 0);
+                                String imageSrcPath = imageService.getImageSrcPath(product.getImagePath());
+                                return productMapper.toProductListItem(product, imageSrcPath, count);
+                            }).toList();
+                            return new PageImpl<>(productListItems, pageable, total);
+                        });
+                })
+            );
     }
 
     @Transactional
