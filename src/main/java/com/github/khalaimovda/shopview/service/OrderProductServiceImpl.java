@@ -21,11 +21,11 @@ public class OrderProductServiceImpl implements OrderProductService {
     private final OrderProductRepository orderProductRepository;
 
     @Override
-    public Mono<Map<Long, Integer>> getProductIdCountMap(Order order, List<Product> products) {
+    public Mono<Map<Long, Integer>> getProductIdCountMap(Long orderId, List<Long> productIds) {
         return orderProductRepository
-            .findAllByOrderAndProductIn(order, products)
+            .findAllByOrderIdAndProductIdIn(orderId, productIds)
             .collect(Collectors.toMap(
-                op -> op.getId().getProductId(),
+                OrderProduct::getOrderId,
                 OrderProduct::getCount));
     }
 

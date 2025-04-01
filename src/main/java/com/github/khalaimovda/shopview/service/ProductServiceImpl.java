@@ -6,7 +6,6 @@ import com.github.khalaimovda.shopview.dto.ProductListItem;
 import com.github.khalaimovda.shopview.mapper.ProductMapper;
 import com.github.khalaimovda.shopview.model.Order;
 import com.github.khalaimovda.shopview.model.OrderProduct;
-import com.github.khalaimovda.shopview.model.OrderProductId;
 import com.github.khalaimovda.shopview.model.Product;
 import com.github.khalaimovda.shopview.repository.OrderProductRepository;
 import com.github.khalaimovda.shopview.repository.OrderRepository;
@@ -31,7 +30,6 @@ public class ProductServiceImpl implements ProductService {
     private final ProductMapper productMapper;
     private final ImageService imageService;
     private final OrderProductService orderProductService;
-    private final ImageRollbackService imageRollbackService;
 
     @Override
     @Transactional(readOnly = true)
@@ -50,7 +48,7 @@ public class ProductServiceImpl implements ProductService {
         Mono<Map<Long, Integer>> productIdCountMap = activeOrder
             .flatMap(order -> products
                 .flatMap(productList -> orderProductService
-                    .getProductIdCountMap(order, productList)))
+                    .getProductIdCountMap(order.getId(), productList.stream().map(Product::getId).toList())))
             .switchIfEmpty(Mono.just(new HashMap<>()));
 
         Mono<List<ProductListItem>> resultProducts = products
@@ -78,34 +76,34 @@ public class ProductServiceImpl implements ProductService {
     @Transactional
 //    @CacheEvict(value = "products", allEntries = true)
     @Override
-    public void createProduct(ProductCreateForm form) {
-        // todo: Реализовать реактивно
-        imageService.saveImage(form.getImage())
+    public Mono<Void> createProduct(ProductCreateForm form) {
+        return imageService.saveImage(form.getImage())
             .onErrorComplete()
             .map(imagePath -> productMapper.toProduct(form, imagePath))
-            .map(product -> productRepository.save(product));  // todo: Проверить после доделки репозиториев
-        String imagePath = "image_path_result";
-        imageRollbackService.registerImageRollback(imagePath);
-        Product product = productMapper.toProduct(form, imagePath);
-        productRepository.save(product);
+            .map(productRepository::save)
+            .then();
     }
 
 //    @Cacheable(value = "products", key = "#id")
     @Override
-    public ProductDetail getProductById(Long id) {
-        Optional<Product> optionalProduct = productRepository.findById(id).blockOptional();
-        if (optionalProduct.isEmpty()) {
-            throw new NoSuchElementException(String.format("Product with id %s not found", id));
-        }
-        Product product = optionalProduct.get();
-
-        Optional<Order> activeOrder = orderRepository.findByIsActiveTrue().blockOptional();
-        Integer count = activeOrder.map(order -> {
-            Optional<OrderProduct> orderProduct = orderProductRepository.findById(new OrderProductId(order.getId(), product.getId())).blockOptional();
-            return orderProduct.map(OrderProduct::getCount).orElse(0);
-        }).orElse(0);
-        String imageSrcPath = imageService.getImageSrcPath(product.getImagePath());
-
-        return productMapper.toProductDetail(product, imageSrcPath, count);
+    public Mono<ProductDetail> getProductById(Long id) {
+        return productRepository
+            .findById(id)
+            .switchIfEmpty(Mono.error(new NoSuchElementException(String.format("Product with id %s not found", id))))
+            .flatMap(
+                product -> {
+                    String imageSrcPath = imageService.getImageSrcPath(product.getImagePath());
+                    return orderRepository
+                        .findByIsActiveTrue()
+                        .flatMap(
+                            cart -> orderProductRepository
+                                .findByOrderIdAndProductId(cart.getId(), product.getId())
+                                .map(OrderProduct::getCount)
+                                .defaultIfEmpty(0)
+                                .map(count -> productMapper.toProductDetail(product, imageSrcPath, count))
+                        )
+                        .defaultIfEmpty(productMapper.toProductDetail(product, imageSrcPath, 0));
+                }
+            );
     }
 }
