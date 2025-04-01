@@ -9,5 +9,4 @@ import reactor.core.publisher.Mono;
 public interface OrderService {
     Flux<OrderListItem> getAllOrders();
     Mono<OrderDetail> getOrderDetail(Long id);
-    Mono<OrderDetail> getOrderDetail(Order order);
 }

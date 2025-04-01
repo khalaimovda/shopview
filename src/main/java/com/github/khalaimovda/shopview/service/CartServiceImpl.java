@@ -29,7 +29,7 @@ public class CartServiceImpl implements CartService {
     public Mono<OrderDetail> getCart() {
         return orderRepository
             .findByIsActiveTrue()
-            .map(orderService::getOrderDetail);
+            .flatMap(cart -> orderService.getOrderDetail(cart.getId()));
     }
 
     @Override
@@ -108,7 +108,7 @@ public class CartServiceImpl implements CartService {
     }
 
     private void validateCartIsNotEmpty(Order order) {
-        OrderDetail orderDetail = orderService.getOrderDetail(order);
+        OrderDetail orderDetail = orderService.getOrderDetail(order.getId()).block();
         if (orderDetail.getTotalPrice().compareTo(BigDecimal.ZERO) == 0) {
             throw new IllegalStateException("Cart is empty");
         }
