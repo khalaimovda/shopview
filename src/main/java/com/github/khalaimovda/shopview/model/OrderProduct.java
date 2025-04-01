@@ -1,40 +1,39 @@
 package com.github.khalaimovda.shopview.model;
 
-import jakarta.persistence.*;
 import jakarta.validation.constraints.Min;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.relational.core.mapping.Column;
+import org.springframework.data.relational.core.mapping.Table;
 
-@Entity
+
 @Table(name = "order_product")
 @Getter
 @Setter
 @NoArgsConstructor
+@AllArgsConstructor
 public class OrderProduct {
 
-    @EmbeddedId
-    private OrderProductId id = new OrderProductId();
+    @Id
+    private Long id;
 
-    @ManyToOne
-    @MapsId("orderId")
-    @JoinColumn(name = "order_id", nullable = false)
-    private Order order;
+    @Column("order_id")
+    private Long orderId;
 
-    @ManyToOne
-    @MapsId("productId")
-    @JoinColumn(name = "product_id", nullable = false)
-    private Product product;
+    @Column("product_id")
+    private Long productId;
 
-    @Column(name = "count", nullable = false)
+    @Column
     @Min(1)
     private Integer count;
 
-    public OrderProduct(Order order, Product product, Integer count) {
-        this.order = order;
-        this.product = product;
+    public OrderProduct(Long orderId, Long productId, Integer count) {
+        this.orderId = orderId;
+        this.productId = productId;
         this.count = count;
-        this.id = new OrderProductId(order.getId(), product.getId());
     }
 
     public void incrementCount() {

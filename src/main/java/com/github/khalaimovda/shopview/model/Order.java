@@ -1,25 +1,19 @@
 package com.github.khalaimovda.shopview.model;
 
-import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.relational.core.mapping.Column;
+import org.springframework.data.relational.core.mapping.Table;
 
-import java.util.ArrayList;
-import java.util.List;
-
-@Entity
 @Table(name = "orders")
 @Getter
 @Setter
 public class Order {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "is_active", nullable = false)
+    @Column("is_active")
     private Boolean isActive = true;
-
-    @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<OrderProduct> orderProducts = new ArrayList<>();
 }

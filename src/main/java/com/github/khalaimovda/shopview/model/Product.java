@@ -1,36 +1,33 @@
 package com.github.khalaimovda.shopview.model;
 
-import jakarta.persistence.*;
+
 import jakarta.validation.constraints.DecimalMin;
 import lombok.Getter;
 import lombok.Setter;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.relational.core.mapping.Column;
+import org.springframework.data.relational.core.mapping.Table;
 
 import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.List;
 
-@Entity
+
 @Table(name = "products")
 @Getter
 @Setter
 public class Product {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "name", nullable = false, unique = true)
+    @Column
     private String name;
 
-    @Column(name = "description", nullable = false, columnDefinition = "text")
+    @Column
     private String description;
 
-    @Column(name = "image_path", nullable = false)
+    @Column("image_path")
     private String imagePath;
 
-    @Column(name = "price", nullable = false, precision = 10, scale = 2)
+    @Column
     @DecimalMin(value = "0.01")
     private BigDecimal price;
-
-    @OneToMany(mappedBy = "product")
-    private List<OrderProduct> orderProducts = new ArrayList<>();
 }
