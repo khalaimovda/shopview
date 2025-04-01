@@ -1,7 +1,5 @@
 package com.github.khalaimovda.shopview.controller;
 
-import com.github.khalaimovda.shopview.dto.OrderDetail;
-import com.github.khalaimovda.shopview.dto.OrderListItem;
 import com.github.khalaimovda.shopview.service.OrderService;
 import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
@@ -11,9 +9,7 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
-
-import java.util.List;
-import java.util.Optional;
+import reactor.core.publisher.Mono;
 
 @Controller
 @RequestMapping("/orders")
@@ -24,16 +20,23 @@ public class OrderController {
     private final OrderService orderService;
 
     @GetMapping("")
-    public String getAllOrders(Model model) {
-        List<OrderListItem> orders = orderService.getAllOrders();
-        model.addAttribute("orders", orders);
-        return "orders";
+    public Mono<String> getAllOrders(Model model) {
+        return orderService
+            .getAllOrders()
+            .collectList()
+            .doOnNext(orders -> model.addAttribute("orders", orders))
+            .thenReturn("orders");
     }
 
     @GetMapping("/{id}")
-    public String getOrderById(Model model, @PathVariable("id") @Min(1L) Long id) {
-        Optional<OrderDetail> orderDetail = orderService.getOrderDetail(id);
-        model.addAttribute("order", orderDetail.orElse(null));
-        return "order";
+    public Mono<String> getOrderById(Model model, @PathVariable("id") @Min(1L) Long id) {
+        return orderService
+            .getOrderDetail(id)
+            .switchIfEmpty(Mono.defer(() -> {
+                model.addAttribute("order", null);
+                return Mono.empty();
+            }))
+            .doOnNext(order -> model.addAttribute("order", order))
+            .thenReturn("order");
     }
 }
