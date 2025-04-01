@@ -29,14 +29,14 @@ public class OrderServiceImpl implements OrderService {
     @Override
     @Cacheable(value = "orders")
     public List<OrderListItem> getAllOrders() {
-        List<Order> orders = orderRepository.findAllByIsActiveFalseOrderByIdDesc();
+        List<Order> orders = orderRepository.findAllByIsActiveFalseOrderByIdDesc().collectList().block();
         return orders.stream().map(this::getOrderDetail).map(orderMapper::toOrderListItem).toList();
     }
 
     @Override
     @Cacheable(value = "orders", key = "#id")
     public Optional<OrderDetail> getOrderDetail(Long id) {
-        Optional<Order> optionalOrder = orderRepository.findById(id);
+        Optional<Order> optionalOrder = orderRepository.findById(id).blockOptional();
         return optionalOrder.map(this::getOrderDetail);
     }
 

@@ -30,7 +30,7 @@ public class CartServiceImpl implements CartService {
     @Transactional
     @Cacheable(value = "orders", key = "'cart'")
     public Optional<OrderDetail> getCart() {
-        Optional<Order> optionalOrder = orderRepository.findByIsActiveTrue();
+        Optional<Order> optionalOrder = orderRepository.findByIsActiveTrue().blockOptional();
         return optionalOrder.map(orderService::getOrderDetail);
     }
 
@@ -77,7 +77,7 @@ public class CartServiceImpl implements CartService {
         @CacheEvict(value = "orders", allEntries = true)
     })
     public void checkout() {
-        Optional<Order> optionalOrder = orderRepository.findByIsActiveTrue();
+        Optional<Order> optionalOrder = orderRepository.findByIsActiveTrue().blockOptional();
         Order order = optionalOrder.orElseThrow(() -> new NoSuchElementException("Cart does not exist"));
         validateCartIsNotEmpty(order);
         order.setIsActive(false);
@@ -86,19 +86,19 @@ public class CartServiceImpl implements CartService {
 
     @Transactional
     private Order getOrCreateActiveOrder() {
-        Optional<Order> activeOrder = orderRepository.findByIsActiveTrue();
-        return activeOrder.orElseGet(() -> orderRepository.save(new Order()));
+        Optional<Order> activeOrder = orderRepository.findByIsActiveTrue().blockOptional();
+        return activeOrder.orElseGet(() -> orderRepository.save(new Order()).block());
     }
 
     private Product getProductByIdOrNoSuchElementException(Long productId) {
-        Optional<Product> optionalProduct = productRepository.findById(productId);
+        Optional<Product> optionalProduct = productRepository.findById(productId).blockOptional();
         return optionalProduct.orElseThrow(
             () -> new NoSuchElementException(String.format("Product with id %s is not found", productId))
         );
     }
 
     private Order getActiveOrderOrNoSuchElementException() {
-        Optional<Order> optionalActiveOrder = orderRepository.findByIsActiveTrue();
+        Optional<Order> optionalActiveOrder = orderRepository.findByIsActiveTrue().blockOptional();
         return optionalActiveOrder.orElseThrow(
             () -> new NoSuchElementException("Active order is not found")
         );

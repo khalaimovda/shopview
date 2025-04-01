@@ -36,31 +36,56 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     @Transactional(readOnly = true)
-    public Page<ProductListItem> getAllProducts(String contentSubstring, Pageable pageable) {
+    public Mono<Page<ProductListItem>> getAllProducts(String contentSubstring, Pageable pageable) {
+        int limit = pageable.getPageSize();
+        long offset = pageable.getOffset();
 
-        Page<Product> productPage = productRepository.findAllByNameContainingIgnoreCaseOrDescriptionContainingIgnoreCase(
-            contentSubstring, contentSubstring, pageable);
+        Mono<List<Product>> products = productRepository
+            .findByNameOrDescriptionContaining(contentSubstring, contentSubstring, limit, offset)
+            .collectList();
 
-        Optional<Order> activeOrder = orderRepository.findByIsActiveTrue();
-        Map<Long, Integer> productIdCountMap = activeOrder
-            .map(order -> orderProductService.getProductIdCountMap(order, productPage.getContent()))
-            .orElseGet(HashMap::new);
+        Mono<Long> totalCount = productRepository.countByNameOrDescriptionContaining(contentSubstring, contentSubstring);
 
-        List<ProductListItem> resultProducts = productPage.getContent().stream()
-            .map(product -> {
-                Integer count = productIdCountMap.getOrDefault(product.getId(), 0);
-                String imageSrcPath = imageService.getImageSrcPath(product.getImagePath());
-                return productMapper.toProductListItem(product,  imageSrcPath, count);
-            }).toList();
+        Mono<Order> activeOrder = orderRepository.findByIsActiveTrue();
 
-        return new PageImpl<>(resultProducts, productPage.getPageable(), productPage.getTotalElements());
+        Mono<Map<Long, Integer>> productIdCountMap = activeOrder
+            .flatMap(order -> products
+                .flatMap(productList -> orderProductService
+                    .getProductIdCountMap(order, productList)))
+            .switchIfEmpty(Mono.just(new HashMap<>()));
+
+        Mono<List<ProductListItem>> resultProducts = products
+            .zipWith(productIdCountMap)
+            .map(tuple -> {
+                List<Product> productList = tuple.getT1();
+                Map<Long, Integer> map = tuple.getT2();
+                return productList.stream()
+                    .map(product -> {
+                        Integer count = map.getOrDefault(product.getId(), 0);
+                        String imageSrcPath = imageService.getImageSrcPath(product.getImagePath());
+                        return productMapper.toProductListItem(product,  imageSrcPath, count);
+                    }).toList();
+            });
+
+        return resultProducts
+            .zipWith(totalCount)
+            .map(tuple -> {
+                List<ProductListItem> productListItems = tuple.getT1();
+                long totalElements = tuple.getT2();
+                return new PageImpl<>(productListItems, pageable, totalElements);
+            });
     }
 
     @Transactional
     @CacheEvict(value = "products", allEntries = true)
     @Override
     public void createProduct(ProductCreateForm form) {
-        String imagePath = imageService.saveImage(form.getImage());
+        // todo: Реализовать реактивно
+        imageService.saveImage(form.getImage())
+            .onErrorComplete()
+            .map(imagePath -> productMapper.toProduct(form, imagePath))
+            .map(product -> productRepository.save(product));  // todo: Проверить после доделки репозиториев
+        String imagePath = "image_path_result";
         imageRollbackService.registerImageRollback(imagePath);
         Product product = productMapper.toProduct(form, imagePath);
         productRepository.save(product);
@@ -69,15 +94,15 @@ public class ProductServiceImpl implements ProductService {
     @Cacheable(value = "products", key = "#id")
     @Override
     public ProductDetail getProductById(Long id) {
-        Optional<Product> optionalProduct = productRepository.findById(id);
+        Optional<Product> optionalProduct = productRepository.findById(id).blockOptional();
         if (optionalProduct.isEmpty()) {
             throw new NoSuchElementException(String.format("Product with id %s not found", id));
         }
         Product product = optionalProduct.get();
 
-        Optional<Order> activeOrder = orderRepository.findByIsActiveTrue();
+        Optional<Order> activeOrder = orderRepository.findByIsActiveTrue().blockOptional();
         Integer count = activeOrder.map(order -> {
-            Optional<OrderProduct> orderProduct = orderProductRepository.findById(new OrderProductId(order.getId(), product.getId()));
+            Optional<OrderProduct> orderProduct = orderProductRepository.findById(new OrderProductId(order.getId(), product.getId())).blockOptional();
             return orderProduct.map(OrderProduct::getCount).orElse(0);
         }).orElse(0);
         String imageSrcPath = imageService.getImageSrcPath(product.getImagePath());

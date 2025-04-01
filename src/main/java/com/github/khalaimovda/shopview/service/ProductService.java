@@ -5,9 +5,10 @@ import com.github.khalaimovda.shopview.dto.ProductDetail;
 import com.github.khalaimovda.shopview.dto.ProductListItem;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import reactor.core.publisher.Mono;
 
 public interface ProductService {
-    Page<ProductListItem> getAllProducts(String contentSubstring, Pageable pageable);
+    Mono<Page<ProductListItem>> getAllProducts(String contentSubstring, Pageable pageable);
     void createProduct(ProductCreateForm form);
     ProductDetail getProductById(Long id);
 }

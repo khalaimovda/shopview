@@ -1,17 +1,15 @@
 package com.github.khalaimovda.shopview.repository;
 
 import com.github.khalaimovda.shopview.model.Order;
-import org.springframework.data.jpa.repository.EntityGraph;
-import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.repository.reactive.ReactiveCrudRepository;
 import org.springframework.stereotype.Repository;
-
-import java.util.List;
-import java.util.Optional;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 @Repository
-public interface OrderRepository extends JpaRepository<Order, Long> {
-    Optional<Order> findByIsActiveTrue();
-
-    @EntityGraph(attributePaths = "orderProducts.product")
-    List<Order> findAllByIsActiveFalseOrderByIdDesc();
+public interface OrderRepository extends ReactiveCrudRepository<Order, Long> {
+    Mono<Order> findByIsActiveTrue();
+    Flux<Order> findAllByIsActiveFalseOrderByIdDesc(); // todo: Нет загрузки связанных сущностей!
+//    @EntityGraph(attributePaths = "orderProducts.product")
+//    List<Order> findAllByIsActiveFalseOrderByIdDesc();
 }
