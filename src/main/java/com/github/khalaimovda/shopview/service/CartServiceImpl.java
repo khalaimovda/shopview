@@ -77,15 +77,19 @@ public class CartServiceImpl implements CartService {
     public Mono<Void> checkout() {
         return orderRepository
             .findByIsActiveTrue()
-            .map(cart -> {
-                validateCartIsNotEmpty(cart); // todo: Доработать, когда orderService будет исправлен
-                return cart;
-            }).flatMap(
-                cart -> {
-                    cart.setIsActive(false); // checkout
-                    return orderRepository.save(cart).then();
-                }
-            );
+            .flatMap(cart -> orderService
+                .getOrderDetail(cart.getId())
+                .flatMap(orderDetail -> {
+                    if (orderDetail.getTotalPrice().compareTo(BigDecimal.ZERO) == 0) {
+                        return Mono.error(new IllegalStateException("Cart is empty"));
+                    }
+                    return Mono.just(cart);
+                })
+            )
+            .flatMap(cart -> {
+                cart.setIsActive(false); // checkout
+                return orderRepository.save(cart).then();
+            });
     }
 
     @Transactional
@@ -105,12 +109,5 @@ public class CartServiceImpl implements CartService {
         return orderRepository
             .findByIsActiveTrue()
             .switchIfEmpty(Mono.error(new NoSuchElementException("Active order is not found")));
-    }
-
-    private void validateCartIsNotEmpty(Order order) {
-        OrderDetail orderDetail = orderService.getOrderDetail(order.getId()).block();
-        if (orderDetail.getTotalPrice().compareTo(BigDecimal.ZERO) == 0) {
-            throw new IllegalStateException("Cart is empty");
-        }
     }
 }
