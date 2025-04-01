@@ -23,7 +23,7 @@ public interface OrderMapper {
     OrderListItem toOrderListItem(OrderWithProducts orderWithProducts);
 
     @Mappings({
-        @Mapping(source = "oderId", target = "id"),
+        @Mapping(source = "id", target = "oderId"),
         @Mapping(source = "products", target = "products"),
         @Mapping(source = "products", target = "totalPrice", qualifiedByName = "calculateTotalPriceForProductsOfOrder")
     })

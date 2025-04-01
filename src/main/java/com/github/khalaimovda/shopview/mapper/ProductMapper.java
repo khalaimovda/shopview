@@ -28,7 +28,6 @@ public interface ProductMapper {
 
     @Mappings({
         @Mapping(target = "id", ignore = true),
-        @Mapping(target = "orderProducts", expression = "java(new java.util.ArrayList<>())"),
         @Mapping(source = "imagePath", target = "imagePath"),
     })
     Product toProduct(ProductCreateForm form, String imagePath);
