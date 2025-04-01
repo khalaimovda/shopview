@@ -22,6 +22,13 @@ public interface OrderMapper {
     @Mapping(source = "products", target = "price", qualifiedByName = "calculateTotalPriceForProductsOfOrder")
     OrderListItem toOrderListItem(OrderWithProducts orderWithProducts);
 
+    @Mappings({
+        @Mapping(source = "oderId", target = "id"),
+        @Mapping(source = "products", target = "products"),
+        @Mapping(source = "products", target = "totalPrice", qualifiedByName = "calculateTotalPriceForProductsOfOrder")
+    })
+    OrderDetail toOrderDetail(OrderWithProducts orderWithProducts);
+
     @Named("calculateTotalPriceForProductsOfOrder")
     static BigDecimal calculateTotalPriceForProductsOfOrder(List<ProductOfOrder> products) {
         return products.stream()

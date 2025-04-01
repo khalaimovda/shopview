@@ -1,9 +1,6 @@
 package com.github.khalaimovda.shopview.service;
 
-import com.github.khalaimovda.shopview.model.Order;
 import com.github.khalaimovda.shopview.model.OrderProduct;
-import com.github.khalaimovda.shopview.model.OrderProductId;
-import com.github.khalaimovda.shopview.model.Product;
 import com.github.khalaimovda.shopview.repository.OrderProductRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -35,14 +32,14 @@ public class OrderProductServiceImpl implements OrderProductService {
 //        @CacheEvict(value = "products", allEntries = true),
 //        @CacheEvict(value = "orders", allEntries = true)
 //    })
-    public Mono<Void> addProductToOrder(Order order, Product product) {
+    public Mono<Void> addProductToOrder(Long orderId, Long productId) {
         return orderProductRepository
-            .findById(new OrderProductId(order.getId(), product.getId()))
+            .findByOrderIdAndProductId(orderId, productId)
             .flatMap(orderProduct -> {
                 orderProduct.incrementCount();
                 return orderProductRepository.save(orderProduct).then();
             })
-            .switchIfEmpty(orderProductRepository.save(new OrderProduct(order, product, 1)).then());
+            .switchIfEmpty(orderProductRepository.save(new OrderProduct(orderId, productId, 1)).then());
     }
 
     @Override
@@ -51,9 +48,9 @@ public class OrderProductServiceImpl implements OrderProductService {
 //        @CacheEvict(value = "products", allEntries = true),
 //        @CacheEvict(value = "orders", allEntries = true)
 //    })
-    public Mono<Void> decreaseProductInOrder(Order order, Product product) {
+    public Mono<Void> decreaseProductInOrder(Long orderId, Long productId) {
         return orderProductRepository
-            .findById(new OrderProductId(order.getId(), product.getId()))
+            .findByOrderIdAndProductId(orderId, productId)
             .flatMap(orderProduct -> {
                 if (orderProduct.getCount() > 1) {
                     orderProduct.decrementCount();
@@ -69,9 +66,9 @@ public class OrderProductServiceImpl implements OrderProductService {
 //        @CacheEvict(value = "products", allEntries = true),
 //        @CacheEvict(value = "orders", allEntries = true)
 //    })
-    public Mono<Void> removeProductFromOrder(Order order, Product product) {
+    public Mono<Void> removeProductFromOrder(Long orderId, Long productId) {
         return orderProductRepository
-            .findById(new OrderProductId(order.getId(), product.getId()))
+            .findByOrderIdAndProductId(orderId, productId)
             .flatMap(orderProductRepository::delete);
     }
 }

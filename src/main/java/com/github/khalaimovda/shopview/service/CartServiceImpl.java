@@ -41,7 +41,7 @@ public class CartServiceImpl implements CartService {
     public Mono<Void> addProductToCart(Long productId) {
         return getProductByIdOrNoSuchElementException(productId)
             .flatMap(product -> getOrCreateActiveOrder()
-                .flatMap(cart -> orderProductService.addProductToOrder(cart, product)));
+                .flatMap(cart -> orderProductService.addProductToOrder(cart.getId(), product.getId())));
     }
 
     @Override
@@ -53,7 +53,7 @@ public class CartServiceImpl implements CartService {
     public Mono<Void> decreaseProductInCart(Long productId) {
         return getProductByIdOrNoSuchElementException(productId)
             .flatMap(product -> getActiveOrderOrNoSuchElementException()
-                .flatMap(cart -> orderProductService.decreaseProductInOrder(cart, product)));
+                .flatMap(cart -> orderProductService.decreaseProductInOrder(cart.getId(), product.getId())));
     }
 
     @Override
@@ -65,7 +65,7 @@ public class CartServiceImpl implements CartService {
     public Mono<Void> removeProductFromCart(Long productId) {
         return getProductByIdOrNoSuchElementException(productId)
             .flatMap(product -> getActiveOrderOrNoSuchElementException()
-                .flatMap(cart -> orderProductService.removeProductFromOrder(cart, product)));
+                .flatMap(cart -> orderProductService.removeProductFromOrder(cart.getId(), product.getId())));
     }
 
     @Override
