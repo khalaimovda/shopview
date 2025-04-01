@@ -12,13 +12,12 @@ import com.github.khalaimovda.shopview.repository.OrderProductRepository;
 import com.github.khalaimovda.shopview.repository.OrderRepository;
 import com.github.khalaimovda.shopview.repository.ProductRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import reactor.core.publisher.Mono;
 
 import java.util.*;
 
@@ -77,7 +76,7 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Transactional
-    @CacheEvict(value = "products", allEntries = true)
+//    @CacheEvict(value = "products", allEntries = true)
     @Override
     public void createProduct(ProductCreateForm form) {
         // todo: Реализовать реактивно
@@ -91,7 +90,7 @@ public class ProductServiceImpl implements ProductService {
         productRepository.save(product);
     }
 
-    @Cacheable(value = "products", key = "#id")
+//    @Cacheable(value = "products", key = "#id")
     @Override
     public ProductDetail getProductById(Long id) {
         Optional<Product> optionalProduct = productRepository.findById(id).blockOptional();

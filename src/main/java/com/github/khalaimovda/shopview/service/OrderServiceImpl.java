@@ -12,11 +12,11 @@ import com.github.khalaimovda.shopview.repository.OrderRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 import java.math.BigDecimal;
 import java.util.Comparator;
-import java.util.List;
-import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -28,21 +28,23 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     @Cacheable(value = "orders")
-    public List<OrderListItem> getAllOrders() {
-        List<Order> orders = orderRepository.findAllByIsActiveFalseOrderByIdDesc().collectList().block();
-        return orders.stream().map(this::getOrderDetail).map(orderMapper::toOrderListItem).toList();
+    public Flux<OrderListItem> getAllOrders() {
+        return orderRepository
+            .findAllPlacedOrdersWithProducts()
+            .map(orderMapper::toOrderListItem);
     }
 
     @Override
-    @Cacheable(value = "orders", key = "#id")
-    public Optional<OrderDetail> getOrderDetail(Long id) {
-        Optional<Order> optionalOrder = orderRepository.findById(id).blockOptional();
-        return optionalOrder.map(this::getOrderDetail);
+//    @Cacheable(value = "orders", key = "#id")
+    public Mono<OrderDetail> getOrderDetail(Long id) {
+        return orderRepository
+            .findById(id)
+            .flatMap(this::getOrderDetail);
     }
 
     @Override
-    @Cacheable(value = "orders", key = "#order.id")
-    public OrderDetail getOrderDetail(Order order) {
+//    @Cacheable(value = "orders", key = "#order.id")
+    public Mono<OrderDetail> getOrderDetail(Order order) {
         OrderDetail orderDetail = new OrderDetail();
         orderDetail.setOderId(order.getId());
         BigDecimal totalPrice = BigDecimal.ZERO;

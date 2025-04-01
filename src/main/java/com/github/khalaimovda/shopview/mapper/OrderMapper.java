@@ -2,10 +2,12 @@ package com.github.khalaimovda.shopview.mapper;
 
 import com.github.khalaimovda.shopview.dto.OrderDetail;
 import com.github.khalaimovda.shopview.dto.OrderListItem;
-import org.mapstruct.Mapper;
-import org.mapstruct.Mapping;
-import org.mapstruct.Mappings;
-import org.mapstruct.ReportingPolicy;
+import com.github.khalaimovda.shopview.dto.OrderWithProducts;
+import com.github.khalaimovda.shopview.dto.ProductOfOrder;
+import org.mapstruct.*;
+
+import java.math.BigDecimal;
+import java.util.List;
 
 
 @Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.ERROR)
@@ -16,4 +18,15 @@ public interface OrderMapper {
         @Mapping(source = "totalPrice", target = "price")
     })
     OrderListItem toOrderListItem(OrderDetail orderDetail);
+
+    @Mapping(source = "products", target = "price", qualifiedByName = "calculateTotalPriceForProductsOfOrder")
+    OrderListItem toOrderListItem(OrderWithProducts orderWithProducts);
+
+    @Named("calculateTotalPriceForProductsOfOrder")
+    static BigDecimal calculateTotalPriceForProductsOfOrder(List<ProductOfOrder> products) {
+        return products.stream()
+            .map(ProductOfOrder::getTotalPrice)
+            .reduce(BigDecimal::add)
+            .orElseGet(() -> BigDecimal.ZERO);
+    }
 }
