@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.8.xsd">
+
+    <changeSet id="7" author="khalaimovda">
+        <preConditions onFail="HALT">
+            <and>
+                <tableExists tableName="order_product" />
+                <dbms type="postgresql"/>
+            </and>
+        </preConditions>
+        <!-- Remove composite primary key and add unique constraint instead -->
+        <sql>
+            ALTER TABLE order_product DROP CONSTRAINT IF EXISTS pk_order_product;
+            ALTER TABLE order_product ADD CONSTRAINT unique_order_products_id_pair UNIQUE (order_id, product_id);
+        </sql>
+        <!-- Add new "id" column and set it as primary key -->
+        <sql>
+            ALTER TABLE order_product ADD COLUMN id BIGSERIAL NOT NULL;
+            ALTER TABLE order_product ADD CONSTRAINT pk_order_product PRIMARY KEY(id);
+        </sql>
+        <rollback>
+            <sql>
+                ALTER TABLE order_product DROP CONSTRAINT IF EXISTS pk_order_product;
+                ALTER TABLE order_product DROP COLUMN IF EXISTS id;
+            </sql>
+            <sql>
+                ALTER TABLE order_product DROP CONSTRAINT IF EXISTS unique_order_products_id_pair;
+                ALTER TABLE order_product ADD CONSTRAINT pk_order_product PRIMARY KEY(order_id, product_id);
+            </sql>
+        </rollback>
+    </changeSet>
+</databaseChangeLog>
