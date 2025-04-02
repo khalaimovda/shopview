@@ -39,7 +39,9 @@ public class OrderProductServiceImpl implements OrderProductService {
                 orderProduct.incrementCount();
                 return orderProductRepository.save(orderProduct);
             })
-            .switchIfEmpty(orderProductRepository.save(new OrderProduct(orderId, productId, 1)))
+            .switchIfEmpty(Mono.defer(
+                () -> orderProductRepository.save(new OrderProduct(orderId, productId, 1)))
+            )
             .then();
     }
 
@@ -55,10 +57,11 @@ public class OrderProductServiceImpl implements OrderProductService {
             .flatMap(orderProduct -> {
                 if (orderProduct.getCount() > 1) {
                     orderProduct.decrementCount();
-                    return orderProductRepository.save(orderProduct).then();
+                    return orderProductRepository.save(orderProduct);
                 }
-                return orderProductRepository.delete(orderProduct).then();
-            });
+                return orderProductRepository.delete(orderProduct);
+            })
+            .then();
     }
 
     @Override

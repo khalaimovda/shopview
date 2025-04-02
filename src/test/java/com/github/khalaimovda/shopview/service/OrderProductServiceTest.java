@@ -1,8 +1,6 @@
 package com.github.khalaimovda.shopview.service;
 
-import com.github.khalaimovda.shopview.model.Order;
 import com.github.khalaimovda.shopview.model.OrderProduct;
-import com.github.khalaimovda.shopview.model.OrderProductId;
 import com.github.khalaimovda.shopview.model.Product;
 import com.github.khalaimovda.shopview.repository.OrderProductRepository;
 import org.junit.jupiter.api.Test;
@@ -12,12 +10,16 @@ import org.mockito.Captor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
+import reactor.test.StepVerifier;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
+import static com.github.khalaimovda.shopview.utils.OrderProductUtils.generateRandomOrderProduct;
+import static com.github.khalaimovda.shopview.utils.OrderProductUtils.generateRandomOrderProducts;
 import static com.github.khalaimovda.shopview.utils.OrderUtils.generateRandomActiveOrder;
 import static com.github.khalaimovda.shopview.utils.OrderUtils.generateRandomNotActiveOrder;
 import static com.github.khalaimovda.shopview.utils.ProductUtils.generateRandomProduct;
@@ -37,7 +39,7 @@ public class OrderProductServiceTest {
     private OrderProductServiceImpl orderProductService;
 
     @Captor
-    private ArgumentCaptor<OrderProductId> orderProductIdCaptor;
+    private ArgumentCaptor<List<Long>> productIdsCaptor;
 
     @Captor
     private ArgumentCaptor<OrderProduct> orderProductCaptor;
@@ -45,52 +47,59 @@ public class OrderProductServiceTest {
     @Test
     void testGetProductIdCountMap() {
         // Arrange
-        List<Product> products = generateRandomProducts(5);
-        Order order = generateRandomActiveOrder(products);
-        List<OrderProduct> orderProducts = order.getOrderProducts();
-        when(orderProductRepository.findAllByOrderAndProductIn(order, products)).thenReturn(orderProducts);
+        List<Long> productIds = generateRandomProducts(5).stream().map(Product::getId).toList();
+        Long orderId = generateRandomActiveOrder().getId();
+        List<OrderProduct> orderProducts = generateRandomOrderProducts(orderId, productIds);
+        when(orderProductRepository.findAllByOrderIdAndProductIdIn(anyLong(), anyList()))
+            .thenReturn(Flux.just(orderProducts.toArray(new OrderProduct[0])));
 
         Map<Long, Integer> expectedProductIdCountMap = new HashMap<>();
         for (OrderProduct orderProduct : orderProducts) {
-            long productId = orderProduct.getProduct().getId();
+            long productId = orderProduct.getProductId();
             int count = orderProduct.getCount();
             expectedProductIdCountMap.putIfAbsent(productId, 0);
             expectedProductIdCountMap.put(productId, expectedProductIdCountMap.get(productId) + count);
         }
 
         // Act
-        Map<Long, Integer> productIdCountMap = orderProductService.getProductIdCountMap(order, products);
+        Mono<Map<Long, Integer>> monoProductIdCountMap = orderProductService.getProductIdCountMap(orderId, productIds);
 
         // Assert
-        assertEquals(expectedProductIdCountMap, productIdCountMap);
+        StepVerifier
+            .create(monoProductIdCountMap)
+            .assertNext(productIdCountMap -> assertEquals(expectedProductIdCountMap, productIdCountMap))
+            .verifyComplete();
+
+        verify(orderProductRepository, times(1))
+            .findAllByOrderIdAndProductIdIn(eq(orderId), productIdsCaptor.capture());
+        assertEquals(productIds, productIdsCaptor.getValue());
     }
 
     @Test
     void testAddProductToOrderOrderProductExists() {
         // Arrange
-        List<Product> products = generateRandomProducts(5);
-        Order order = generateRandomNotActiveOrder(products);
-        Product product = products.getFirst();
-        OrderProduct orderProduct = order.getOrderProducts().getFirst();
+        Long productId = generateRandomProduct().getId();
+        Long orderId = generateRandomNotActiveOrder().getId();
+        OrderProduct orderProduct = generateRandomOrderProduct(orderId, productId);
         int count = orderProduct.getCount();
-        when(orderProductRepository.findById(any())).thenReturn(Optional.of(orderProduct));
+        when(orderProductRepository.findByOrderIdAndProductId(anyLong(), anyLong()))
+            .thenReturn(Mono.just(orderProduct));
+        when(orderProductRepository.save(any(OrderProduct.class))).thenReturn(Mono.just(orderProduct));
 
         // Act
-        orderProductService.addProductToOrder(order, product);
+        Mono<Void> monoResult = orderProductService.addProductToOrder(orderId, productId);
 
         // Assert
-        verify(orderProductRepository, times(1)).findById(orderProductIdCaptor.capture());
-        assertAll(
-            () -> assertEquals(order.getId(), orderProductIdCaptor.getValue().getOrderId()),
-            () -> assertEquals(product.getId(), orderProductIdCaptor.getValue().getProductId())
-        );
+        StepVerifier.create(monoResult).verifyComplete();
 
-        verify(orderProductRepository, times(1)).save(orderProductCaptor.capture());
+        verify(orderProductRepository, times(1))
+            .findByOrderIdAndProductId(orderId, productId);
+
+        verify(orderProductRepository, times(1))
+            .save(orderProductCaptor.capture());
         assertAll(
-            () -> assertEquals(order, orderProductCaptor.getValue().getOrder()),
-            () -> assertEquals(product, orderProductCaptor.getValue().getProduct()),
-            () -> assertEquals(order.getId(), orderProductCaptor.getValue().getId().getOrderId()),
-            () -> assertEquals(product.getId(), orderProductCaptor.getValue().getId().getProductId()),
+            () -> assertEquals(orderId, orderProductCaptor.getValue().getOrderId()),
+            () -> assertEquals(productId, orderProductCaptor.getValue().getProductId()),
             () -> assertEquals(count + 1, orderProductCaptor.getValue().getCount())
         );
     }
@@ -98,27 +107,26 @@ public class OrderProductServiceTest {
     @Test
     void testAddProductToOrderOrderProductNotExist() {
         // Arrange
-        List<Product> products = generateRandomProducts(5);
-        Order order = generateRandomNotActiveOrder(products);
-        Product product = generateRandomProduct();
-        when(orderProductRepository.findById(any())).thenReturn(Optional.empty());
+        Long productId = generateRandomProduct().getId();
+        Long orderId = generateRandomNotActiveOrder().getId();
+        when(orderProductRepository.findByOrderIdAndProductId(anyLong(), anyLong()))
+            .thenReturn(Mono.empty());
+        when(orderProductRepository.save(any(OrderProduct.class))).thenReturn(Mono.just(new OrderProduct()));
 
         // Act
-        orderProductService.addProductToOrder(order, product);
+        Mono<Void> monoResult = orderProductService.addProductToOrder(orderId, productId);
 
         // Assert
-        verify(orderProductRepository, times(1)).findById(orderProductIdCaptor.capture());
-        assertAll(
-            () -> assertEquals(order.getId(), orderProductIdCaptor.getValue().getOrderId()),
-            () -> assertEquals(product.getId(), orderProductIdCaptor.getValue().getProductId())
-        );
+        StepVerifier.create(monoResult).verifyComplete();
 
-        verify(orderProductRepository, times(1)).save(orderProductCaptor.capture());
+        verify(orderProductRepository, times(1))
+            .findByOrderIdAndProductId(orderId, productId);
+
+        verify(orderProductRepository, times(1))
+            .save(orderProductCaptor.capture());
         assertAll(
-            () -> assertEquals(order, orderProductCaptor.getValue().getOrder()),
-            () -> assertEquals(product, orderProductCaptor.getValue().getProduct()),
-            () -> assertEquals(order.getId(), orderProductCaptor.getValue().getId().getOrderId()),
-            () -> assertEquals(product.getId(), orderProductCaptor.getValue().getId().getProductId()),
+            () -> assertEquals(orderId, orderProductCaptor.getValue().getOrderId()),
+            () -> assertEquals(productId, orderProductCaptor.getValue().getProductId()),
             () -> assertEquals(1, orderProductCaptor.getValue().getCount())
         );
     }
@@ -126,20 +134,19 @@ public class OrderProductServiceTest {
     @Test
     void testDecreaseProductInOrderOrderProductNotExist() {
         // Arrange
-        List<Product> products = generateRandomProducts(5);
-        Order order = generateRandomNotActiveOrder(products);
-        Product product = generateRandomProduct();
-        when(orderProductRepository.findById(any())).thenReturn(Optional.empty());
+        Long productId = generateRandomProduct().getId();
+        Long orderId = generateRandomNotActiveOrder().getId();
+        when(orderProductRepository.findByOrderIdAndProductId(anyLong(), anyLong()))
+            .thenReturn(Mono.empty());
 
         // Act
-        orderProductService.decreaseProductInOrder(order, product);
+        Mono<Void> monoResult = orderProductService.decreaseProductInOrder(orderId, productId);
 
         // Assert
-        verify(orderProductRepository, times(1)).findById(orderProductIdCaptor.capture());
-        assertAll(
-            () -> assertEquals(order.getId(), orderProductIdCaptor.getValue().getOrderId()),
-            () -> assertEquals(product.getId(), orderProductIdCaptor.getValue().getProductId())
-        );
+        StepVerifier.create(monoResult).verifyComplete();
+
+        verify(orderProductRepository, times(1))
+            .findByOrderIdAndProductId(orderId, productId);
 
         // Both operations save() and delete() must not be called
         verify(orderProductRepository, never()).save(any());
@@ -149,22 +156,23 @@ public class OrderProductServiceTest {
     @Test
     void testDecreaseProductInOrderOrderProductHasCountOne() {
         // Arrange
-        List<Product> products = generateRandomProducts(5);
-        Order order = generateRandomNotActiveOrder(products);
-        Product product = products.getFirst();
-        OrderProduct orderProduct = order.getOrderProducts().getFirst();
-        orderProduct.setCount(1); // Set count = 1
-        when(orderProductRepository.findById(any())).thenReturn(Optional.of(orderProduct));
+        Long productId = generateRandomProduct().getId();
+        Long orderId = generateRandomNotActiveOrder().getId();
+        OrderProduct orderProduct = generateRandomOrderProduct(orderId, productId);
+        orderProduct.setCount(1);
+
+        when(orderProductRepository.findByOrderIdAndProductId(anyLong(), anyLong()))
+            .thenReturn(Mono.just(orderProduct));
+        when(orderProductRepository.delete(any(OrderProduct.class))).thenReturn(Mono.empty());
 
         // Act
-        orderProductService.decreaseProductInOrder(order, product);
+        Mono<Void> monoResult = orderProductService.decreaseProductInOrder(orderId, productId);
 
         // Assert
-        verify(orderProductRepository, times(1)).findById(orderProductIdCaptor.capture());
-        assertAll(
-            () -> assertEquals(order.getId(), orderProductIdCaptor.getValue().getOrderId()),
-            () -> assertEquals(product.getId(), orderProductIdCaptor.getValue().getProductId())
-        );
+        StepVerifier.create(monoResult).verifyComplete();
+
+        verify(orderProductRepository, times(1))
+            .findByOrderIdAndProductId(orderId, productId);
 
         // Count == 1; decrease() => delete()
         verify(orderProductRepository, times(1)).delete(orderProductCaptor.capture());
@@ -177,31 +185,29 @@ public class OrderProductServiceTest {
     @Test
     void testDecreaseProductInOrderOrderProductHasCountMoreThanOne() {
         // Arrange
-        List<Product> products = generateRandomProducts(5);
-        Order order = generateRandomNotActiveOrder(products);
-        Product product = products.getFirst();
-        OrderProduct orderProduct = order.getOrderProducts().getFirst();
+        Long productId = generateRandomProduct().getId();
+        Long orderId = generateRandomNotActiveOrder().getId();
+        OrderProduct orderProduct = generateRandomOrderProduct(orderId, productId);
         int count = 13;
         orderProduct.setCount(count); // Set count = 13 > 1
-        when(orderProductRepository.findById(any())).thenReturn(Optional.of(orderProduct));
+        when(orderProductRepository.findByOrderIdAndProductId(anyLong(), anyLong()))
+            .thenReturn(Mono.just(orderProduct));
+        when(orderProductRepository.save(any(OrderProduct.class))).thenReturn(Mono.just(new OrderProduct()));
 
         // Act
-        orderProductService.decreaseProductInOrder(order, product);
+        Mono<Void> monoResult = orderProductService.decreaseProductInOrder(orderId, productId);
 
         // Assert
-        verify(orderProductRepository, times(1)).findById(orderProductIdCaptor.capture());
-        assertAll(
-            () -> assertEquals(order.getId(), orderProductIdCaptor.getValue().getOrderId()),
-            () -> assertEquals(product.getId(), orderProductIdCaptor.getValue().getProductId())
-        );
+        StepVerifier.create(monoResult).verifyComplete();
 
-        // Count == 1; decrease() => save(count - 1)
-        verify(orderProductRepository, times(1)).save(orderProductCaptor.capture());
+        verify(orderProductRepository, times(1))
+            .findByOrderIdAndProductId(orderId, productId);
+
+        verify(orderProductRepository, times(1))
+            .save(orderProductCaptor.capture());
         assertAll(
-            () -> assertEquals(order, orderProductCaptor.getValue().getOrder()),
-            () -> assertEquals(product, orderProductCaptor.getValue().getProduct()),
-            () -> assertEquals(order.getId(), orderProductCaptor.getValue().getId().getOrderId()),
-            () -> assertEquals(product.getId(), orderProductCaptor.getValue().getId().getProductId()),
+            () -> assertEquals(orderId, orderProductCaptor.getValue().getOrderId()),
+            () -> assertEquals(productId, orderProductCaptor.getValue().getProductId()),
             () -> assertEquals(count - 1, orderProductCaptor.getValue().getCount())
         );
 
@@ -212,20 +218,21 @@ public class OrderProductServiceTest {
     @Test
     void testRemoveProductInOrderOrderProductNotExist() {
         // Arrange
-        List<Product> products = generateRandomProducts(5);
-        Order order = generateRandomNotActiveOrder(products);
-        Product product = generateRandomProduct();
-        when(orderProductRepository.findById(any())).thenReturn(Optional.empty());
+        Long productId = generateRandomProduct().getId();
+        Long orderId = generateRandomNotActiveOrder().getId();
+        OrderProduct orderProduct = generateRandomOrderProduct(orderId, productId);
+
+        when(orderProductRepository.findByOrderIdAndProductId(anyLong(), anyLong()))
+            .thenReturn(Mono.empty());
 
         // Act
-        orderProductService.removeProductFromOrder(order, product);
+        Mono<Void> monoResult = orderProductService.removeProductFromOrder(orderId, productId);
 
         // Assert
-        verify(orderProductRepository, times(1)).findById(orderProductIdCaptor.capture());
-        assertAll(
-            () -> assertEquals(order.getId(), orderProductIdCaptor.getValue().getOrderId()),
-            () -> assertEquals(product.getId(), orderProductIdCaptor.getValue().getProductId())
-        );
+        StepVerifier.create(monoResult).verifyComplete();
+
+        verify(orderProductRepository, times(1))
+            .findByOrderIdAndProductId(orderId, productId);
 
         // Operation delete() must not be called
         verify(orderProductRepository, never()).delete(any());
@@ -234,21 +241,22 @@ public class OrderProductServiceTest {
     @Test
     void testRemoveProductInOrder() {
         // Arrange
-        List<Product> products = generateRandomProducts(5);
-        Order order = generateRandomNotActiveOrder(products);
-        Product product = products.getFirst();
-        OrderProduct orderProduct = order.getOrderProducts().getFirst();
-        when(orderProductRepository.findById(any())).thenReturn(Optional.of(orderProduct));
+        Long productId = generateRandomProduct().getId();
+        Long orderId = generateRandomNotActiveOrder().getId();
+        OrderProduct orderProduct = generateRandomOrderProduct(orderId, productId);
+        int count = orderProduct.getCount();
+        when(orderProductRepository.findByOrderIdAndProductId(anyLong(), anyLong()))
+            .thenReturn(Mono.just(orderProduct));
+        when(orderProductRepository.delete(any(OrderProduct.class))).thenReturn(Mono.empty());
 
         // Act
-        orderProductService.removeProductFromOrder(order, product);
+        Mono<Void> monoResult = orderProductService.removeProductFromOrder(orderId, productId);
 
         // Assert
-        verify(orderProductRepository, times(1)).findById(orderProductIdCaptor.capture());
-        assertAll(
-            () -> assertEquals(order.getId(), orderProductIdCaptor.getValue().getOrderId()),
-            () -> assertEquals(product.getId(), orderProductIdCaptor.getValue().getProductId())
-        );
+        StepVerifier.create(monoResult).verifyComplete();
+
+        verify(orderProductRepository, times(1))
+            .findByOrderIdAndProductId(orderId, productId);
 
         verify(orderProductRepository, times(1)).delete(orderProductCaptor.capture());
         assertEquals(orderProduct, orderProductCaptor.getValue());
