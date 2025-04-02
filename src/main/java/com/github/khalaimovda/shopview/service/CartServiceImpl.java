@@ -41,7 +41,7 @@ public class CartServiceImpl implements CartService {
     public Mono<Void> addProductToCart(Long productId) {
         return getProductByIdOrNoSuchElementException(productId)
             .flatMap(product -> getOrCreateActiveOrder()
-                .flatMap(cart -> orderProductService.addProductToOrder(cart.getId(), product.getId())));
+            .flatMap(cart -> orderProductService.addProductToOrder(cart.getId(), product.getId())));
     }
 
     @Override
@@ -53,7 +53,7 @@ public class CartServiceImpl implements CartService {
     public Mono<Void> decreaseProductInCart(Long productId) {
         return getProductByIdOrNoSuchElementException(productId)
             .flatMap(product -> getActiveOrderOrNoSuchElementException()
-                .flatMap(cart -> orderProductService.decreaseProductInOrder(cart.getId(), product.getId())));
+            .flatMap(cart -> orderProductService.decreaseProductInOrder(cart.getId(), product.getId())));
     }
 
     @Override
@@ -65,7 +65,7 @@ public class CartServiceImpl implements CartService {
     public Mono<Void> removeProductFromCart(Long productId) {
         return getProductByIdOrNoSuchElementException(productId)
             .flatMap(product -> getActiveOrderOrNoSuchElementException()
-                .flatMap(cart -> orderProductService.removeProductFromOrder(cart.getId(), product.getId())));
+            .flatMap(cart -> orderProductService.removeProductFromOrder(cart.getId(), product.getId())));
     }
 
     @Override
@@ -75,8 +75,7 @@ public class CartServiceImpl implements CartService {
 //        @CacheEvict(value = "orders", allEntries = true)
 //    })
     public Mono<Void> checkout() {
-        return orderRepository
-            .findByIsActiveTrue()
+        return getActiveOrderOrNoSuchElementException()
             .flatMap(cart -> orderService
                 .getOrderDetail(cart.getId())
                 .flatMap(orderDetail -> {
@@ -88,15 +87,16 @@ public class CartServiceImpl implements CartService {
             )
             .flatMap(cart -> {
                 cart.setIsActive(false); // checkout
-                return orderRepository.save(cart).then();
-            });
+                return orderRepository.save(cart);
+            })
+            .then();
     }
 
     @Transactional
     private Mono<Order> getOrCreateActiveOrder() {
         return orderRepository
             .findByIsActiveTrue()
-            .switchIfEmpty(orderRepository.save(new Order()));
+            .switchIfEmpty(Mono.defer(() -> orderRepository.save(new Order())));
     }
 
     private Mono<Product> getProductByIdOrNoSuchElementException(Long productId) {

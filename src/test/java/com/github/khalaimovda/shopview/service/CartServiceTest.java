@@ -1,6 +1,7 @@
 package com.github.khalaimovda.shopview.service;
 
 import com.github.khalaimovda.shopview.dto.OrderDetail;
+import com.github.khalaimovda.shopview.dto.OrderWithProducts;
 import com.github.khalaimovda.shopview.model.Order;
 import com.github.khalaimovda.shopview.model.Product;
 import com.github.khalaimovda.shopview.repository.OrderRepository;
@@ -12,16 +13,15 @@ import org.mockito.Captor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import reactor.core.publisher.Mono;
+import reactor.test.StepVerifier;
 
 import java.util.List;
 import java.util.NoSuchElementException;
-import java.util.Optional;
 
-import static com.github.khalaimovda.shopview.utils.OrderUtils.generateRandomActiveOrder;
-import static com.github.khalaimovda.shopview.utils.OrderUtils.getOrderDetail;
+import static com.github.khalaimovda.shopview.utils.OrderUtils.*;
 import static com.github.khalaimovda.shopview.utils.ProductUtils.generateRandomProduct;
-import static com.github.khalaimovda.shopview.utils.ProductUtils.generateRandomProducts;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.*;
 
@@ -52,25 +52,29 @@ public class CartServiceTest {
     @Test
     void testGetCart() {
         // Arrange
-        List<Product> products = generateRandomProducts(5);
-        Order cart = generateRandomActiveOrder(products);
-        when(orderRepository.findByIsActiveTrue()).thenReturn(Optional.of(cart));
-        OrderDetail expectedOrderDetail = getOrderDetail(cart);
-        when(orderService.getOrderDetail(cart)).thenReturn(expectedOrderDetail);
+        OrderDetail cartDetail = getOrderDetail(generateRandomOrderWithProducts());
+        Order cart = generateRandomActiveOrder();
+        cart.setId(cartDetail.getOderId());
+        when(orderRepository.findByIsActiveTrue()).thenReturn(Mono.just(cart));
+        when(orderService.getOrderDetail(cart.getId())).thenReturn(Mono.just(cartDetail));
 
         // Act
-        Optional<OrderDetail> optionalOrderDetail = cartService.getCart();
+        Mono<OrderDetail> monoOrderDetail = cartService.getCart();
 
         // Assert
-        assertTrue(optionalOrderDetail.isPresent());
-        OrderDetail orderDetail = optionalOrderDetail.get();
-        assertEquals(expectedOrderDetail, orderDetail);
+        StepVerifier
+            .create(monoOrderDetail)
+            .assertNext(orderDetail -> assertEquals(cartDetail, orderDetail))
+            .verifyComplete();
     }
 
     @Test
     void testAddProductToCartProductNotFound() {
-        when(productRepository.findById(anyLong())).thenReturn(Optional.empty());
-        assertThrows(NoSuchElementException.class, () -> cartService.addProductToCart(136L));
+        when(productRepository.findById(anyLong())).thenReturn(Mono.empty());
+        StepVerifier
+            .create(cartService.addProductToCart(136L))
+            .expectError(NoSuchElementException.class)
+            .verify();
         verify(productRepository, times(1)).findById(136L);
     }
 
@@ -78,53 +82,58 @@ public class CartServiceTest {
     void testAddProductToCartCartNotExist() {
         // Arrange
         Product product = generateRandomProduct();
-        when(productRepository.findById(anyLong())).thenReturn(Optional.of(product));
-        when(orderRepository.findByIsActiveTrue()).thenReturn(Optional.empty());
-        when(orderRepository.save(any())).thenReturn(new Order());
+        Order newCart = generateRandomActiveOrder();
+        when(productRepository.findById(anyLong())).thenReturn(Mono.just(product));
+        when(orderRepository.findByIsActiveTrue()).thenReturn(Mono.empty());
+        when(orderRepository.save(any())).thenReturn(Mono.just(newCart));
+        when(orderProductService.addProductToOrder(anyLong(), anyLong())).thenReturn(Mono.empty());
 
         // Act
-        cartService.addProductToCart(product.getId());
+        StepVerifier
+            .create(cartService.addProductToCart(product.getId()))
+            .verifyComplete();
 
         // Assert
         verify(productRepository, times(1)).findById(product.getId());
 
         // If current cart does not exist we must save the new one
-        verify(orderRepository, times(1)).save(any());
+        verify(orderRepository, times(1)).save(any(Order.class));
 
-        verify(orderProductService, times(1)).addProductToOrder(orderCaptor.capture(), productCaptor.capture());
-
-        assertTrue(orderCaptor.getValue().getOrderProducts().isEmpty());
-        assertEquals(product, productCaptor.getValue());
+        verify(orderProductService, times(1)).addProductToOrder(newCart.getId(), product.getId());
     }
 
     @Test
     void testAddProductToCart() {
         // Arrange
         Product product = generateRandomProduct();
-        List<Product> products = generateRandomProducts(5);
-        Order cart = generateRandomActiveOrder(products);
-        when(productRepository.findById(anyLong())).thenReturn(Optional.of(product));
-        when(orderRepository.findByIsActiveTrue()).thenReturn(Optional.of(cart));
+        Order cart = generateRandomActiveOrder();
+        when(productRepository.findById(anyLong())).thenReturn(Mono.just(product));
+        when(orderRepository.findByIsActiveTrue()).thenReturn(Mono.just(cart));
+        when(orderProductService.addProductToOrder(anyLong(), anyLong())).thenReturn(Mono.empty());
 
         // Act
-        cartService.addProductToCart(product.getId());
+        StepVerifier
+            .create(cartService.addProductToCart(product.getId()))
+            .verifyComplete();
 
         // Assert
         verify(productRepository, times(1)).findById(product.getId());
 
+        verify(orderRepository, times(1)).findByIsActiveTrue();
+
         // If current cart exists we must not save this cart, only order_product
         verify(orderRepository, never()).save(any());
 
-        verify(orderProductService, times(1)).addProductToOrder(orderCaptor.capture(), productCaptor.capture());
-
-        assertEquals(cart, orderCaptor.getValue());
-        assertEquals(product, productCaptor.getValue());
+        verify(orderProductService, times(1)).addProductToOrder(cart.getId(), product.getId());
     }
 
     @Test
     void testDecreaseProductInCartProductNotFound() {
-        when(productRepository.findById(anyLong())).thenReturn(Optional.empty());
-        assertThrows(NoSuchElementException.class, () -> cartService.decreaseProductInCart(136L));
+        when(productRepository.findById(anyLong())).thenReturn(Mono.empty());
+        StepVerifier
+            .create(cartService.decreaseProductInCart(136L))
+            .expectError(NoSuchElementException.class)
+            .verify();
         verify(productRepository, times(1)).findById(136L);
     }
 
@@ -132,11 +141,16 @@ public class CartServiceTest {
     void testDecreaseProductInCartCartNotExist() {
         // Arrange
         Product product = generateRandomProduct();
-        when(productRepository.findById(anyLong())).thenReturn(Optional.of(product));
-        when(orderRepository.findByIsActiveTrue()).thenReturn(Optional.empty());
+        when(productRepository.findById(anyLong())).thenReturn(Mono.just(product));
+        when(orderRepository.findByIsActiveTrue()).thenReturn(Mono.empty());
 
-        // Act and Assert
-        assertThrows(NoSuchElementException.class, () -> cartService.decreaseProductInCart(product.getId()));
+        // Act
+        StepVerifier
+            .create(cartService.decreaseProductInCart(product.getId()))
+            .expectError(NoSuchElementException.class)
+            .verify();
+
+        // Assert
         verify(productRepository, times(1)).findById(product.getId());
         verify(orderRepository, times(1)).findByIsActiveTrue();
     }
@@ -145,31 +159,35 @@ public class CartServiceTest {
     void testDecreaseProductInCart() {
         // Arrange
         Product product = generateRandomProduct();
-        List<Product> products = generateRandomProducts(5);
-        Order cart = generateRandomActiveOrder(products);
-        when(productRepository.findById(anyLong())).thenReturn(Optional.of(product));
-        when(orderRepository.findByIsActiveTrue()).thenReturn(Optional.of(cart));
+        Order cart = generateRandomActiveOrder();
+        when(productRepository.findById(anyLong())).thenReturn(Mono.just(product));
+        when(orderRepository.findByIsActiveTrue()).thenReturn(Mono.just(cart));
+        when(orderProductService.decreaseProductInOrder(anyLong(), anyLong())).thenReturn(Mono.empty());
 
         // Act
-        cartService.decreaseProductInCart(product.getId());
+        StepVerifier
+            .create(cartService.decreaseProductInCart(product.getId()))
+            .verifyComplete();
 
         // Assert
         verify(productRepository, times(1)).findById(product.getId());
 
+        verify(orderRepository, times(1)).findByIsActiveTrue();
+
         // If current cart exists we must not save this cart, only order_product
         verify(orderRepository, never()).save(any());
 
-        verify(orderProductService, times(1)).decreaseProductInOrder(orderCaptor.capture(), productCaptor.capture());
-
-        assertEquals(cart, orderCaptor.getValue());
-        assertEquals(product, productCaptor.getValue());
+        verify(orderProductService, times(1)).decreaseProductInOrder(cart.getId(), product.getId());
     }
 
 
     @Test
     void testRemoveProductFromCartProductNotFound() {
-        when(productRepository.findById(anyLong())).thenReturn(Optional.empty());
-        assertThrows(NoSuchElementException.class, () -> cartService.removeProductFromCart(136L));
+        when(productRepository.findById(anyLong())).thenReturn(Mono.empty());
+        StepVerifier
+            .create(cartService.removeProductFromCart(136L))
+            .expectError(NoSuchElementException.class)
+            .verify();
         verify(productRepository, times(1)).findById(136L);
     }
 
@@ -177,11 +195,16 @@ public class CartServiceTest {
     void testRemoveProductFromCartCartNotExist() {
         // Arrange
         Product product = generateRandomProduct();
-        when(productRepository.findById(anyLong())).thenReturn(Optional.of(product));
-        when(orderRepository.findByIsActiveTrue()).thenReturn(Optional.empty());
+        when(productRepository.findById(anyLong())).thenReturn(Mono.just(product));
+        when(orderRepository.findByIsActiveTrue()).thenReturn(Mono.empty());
 
-        // Act and Assert
-        assertThrows(NoSuchElementException.class, () -> cartService.removeProductFromCart(product.getId()));
+        // Act
+        StepVerifier
+            .create(cartService.removeProductFromCart(product.getId()))
+            .expectError(NoSuchElementException.class)
+            .verify();
+
+        // Assert
         verify(productRepository, times(1)).findById(product.getId());
         verify(orderRepository, times(1)).findByIsActiveTrue();
     }
@@ -190,62 +213,86 @@ public class CartServiceTest {
     void testRemoveProductFromCart() {
         // Arrange
         Product product = generateRandomProduct();
-        List<Product> products = generateRandomProducts(5);
-        Order cart = generateRandomActiveOrder(products);
-        when(productRepository.findById(anyLong())).thenReturn(Optional.of(product));
-        when(orderRepository.findByIsActiveTrue()).thenReturn(Optional.of(cart));
+        Order cart = generateRandomActiveOrder();
+        when(productRepository.findById(anyLong())).thenReturn(Mono.just(product));
+        when(orderRepository.findByIsActiveTrue()).thenReturn(Mono.just(cart));
+        when(orderProductService.removeProductFromOrder(anyLong(), anyLong())).thenReturn(Mono.empty());
 
         // Act
-        cartService.removeProductFromCart(product.getId());
+        StepVerifier
+            .create(cartService.removeProductFromCart(product.getId()))
+            .verifyComplete();
 
         // Assert
         verify(productRepository, times(1)).findById(product.getId());
 
+        verify(orderRepository, times(1)).findByIsActiveTrue();
+
         // If current cart exists we must not save this cart, only order_product
         verify(orderRepository, never()).save(any());
 
-        verify(orderProductService, times(1)).removeProductFromOrder(orderCaptor.capture(), productCaptor.capture());
-
-        assertEquals(cart, orderCaptor.getValue());
-        assertEquals(product, productCaptor.getValue());
+        verify(orderProductService, times(1)).removeProductFromOrder(cart.getId(), product.getId());
     }
 
     @Test
     void testCheckoutCartNotExist() {
-        when(orderRepository.findByIsActiveTrue()).thenReturn(Optional.empty());
-        assertThrows(NoSuchElementException.class, () -> cartService.checkout());
+        // Arrange
+        when(orderRepository.findByIsActiveTrue()).thenReturn(Mono.empty());
+
+        // Act
+        StepVerifier
+            .create(cartService.checkout())
+            .expectError(NoSuchElementException.class)
+            .verify();
+
+        // Assert
         verify(orderRepository, times(1)).findByIsActiveTrue();
     }
 
     @Test
     void testCheckoutCartIsEmpty() {
         // Arrange
-        Order cart = generateRandomActiveOrder(List.of()); // Empty cart
-        OrderDetail orderDetail = getOrderDetail(cart);
-        when(orderRepository.findByIsActiveTrue()).thenReturn(Optional.of(cart));
-        when(orderService.getOrderDetail(cart)).thenReturn(orderDetail);
+
+        // Empty cart
+        OrderWithProducts orderWithProducts = generateRandomOrderWithProducts();
+        orderWithProducts.setProducts(List.of());
+        OrderDetail orderDetail = getOrderDetail(orderWithProducts);
+        Order cart = generateRandomActiveOrder();
+        cart.setId(orderWithProducts.getId());
+
+        when(orderRepository.findByIsActiveTrue()).thenReturn(Mono.just(cart));
+        when(orderService.getOrderDetail(cart.getId())).thenReturn(Mono.just(orderDetail));
 
         // Act and Assert
-        assertThrows(IllegalStateException.class, () -> cartService.checkout());
+        StepVerifier
+            .create(cartService.checkout())
+            .expectError(IllegalStateException.class)
+            .verify();
+
         verify(orderRepository, times(1)).findByIsActiveTrue();
-        verify(orderService, times(1)).getOrderDetail(cart);
+        verify(orderService, times(1)).getOrderDetail(cart.getId());
     }
 
     @Test
     void testCheckoutCart() {
         // Arrange
-        List<Product> products = generateRandomProducts(5);
-        Order cart = generateRandomActiveOrder(products);
-        OrderDetail orderDetail = getOrderDetail(cart);
-        when(orderRepository.findByIsActiveTrue()).thenReturn(Optional.of(cart));
-        when(orderService.getOrderDetail(cart)).thenReturn(orderDetail);
+        OrderWithProducts orderWithProducts = generateRandomOrderWithProducts();
+        OrderDetail orderDetail = getOrderDetail(orderWithProducts);
+        Order cart = generateRandomActiveOrder();
+        cart.setId(orderWithProducts.getId());
+
+        when(orderRepository.findByIsActiveTrue()).thenReturn(Mono.just(cart));
+        when(orderService.getOrderDetail(cart.getId())).thenReturn(Mono.just(orderDetail));
+        when(orderRepository.save(any(Order.class))).thenReturn(Mono.just(new Order()));
 
         // Act
-        cartService.checkout();
+        StepVerifier
+            .create(cartService.checkout())
+            .verifyComplete();
 
         // Assert
         verify(orderRepository, times(1)).findByIsActiveTrue();
-        verify(orderService, times(1)).getOrderDetail(cart);
+        verify(orderService, times(1)).getOrderDetail(cart.getId());
         verify(orderRepository, times(1)).save(orderCaptor.capture());
 
         cart.setIsActive(false);

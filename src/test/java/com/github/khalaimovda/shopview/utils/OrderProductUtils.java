@@ -28,6 +28,9 @@ public class OrderProductUtils {
      * Suppose that all order_product items belong to one order
      */
     public static BigDecimal calculateTotalPrice(List<ProductOfOrder> products) {
+        if (products.isEmpty()) {
+            return BigDecimal.ZERO;
+        }
         return products.stream().map(ProductOfOrder::getTotalPrice).reduce(BigDecimal::add).get();
     }
 }

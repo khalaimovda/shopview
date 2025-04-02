@@ -76,23 +76,6 @@ public class OrderUtils {
         return calculateTotalPrice(order.getProducts());
     }
 
-//    public static List<ProductOfOrder> getProductOfOrderList(Order order) {
-//        return order.getOrderProducts().stream().map(
-//            orderProduct -> {
-//                Product product = orderProduct.getProduct();
-//
-//                ProductOfOrder productOfOrder = new ProductOfOrder();
-//                productOfOrder.setId(product.getId());
-//                productOfOrder.setName(product.getName());
-//                productOfOrder.setPrice(product.getPrice());
-//                productOfOrder.setCount(orderProduct.getCount());
-//                productOfOrder.setTotalPrice(product.getPrice().multiply(new BigDecimal(orderProduct.getCount())));
-//
-//                return productOfOrder;
-//            }
-//        ).toList();
-//    }
-
     public static OrderDetail getOrderDetail(OrderWithProducts order) {
         OrderDetail orderDetail = new OrderDetail();
         orderDetail.setOderId(order.getId());
