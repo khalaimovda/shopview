@@ -19,18 +19,22 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.http.codec.multipart.FilePart;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
+import reactor.test.StepVerifier;
 
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
-import java.util.Optional;
 
+import static com.github.khalaimovda.shopview.utils.OrderProductUtils.generateRandomOrderProduct;
 import static com.github.khalaimovda.shopview.utils.OrderUtils.generateRandomActiveOrder;
 import static com.github.khalaimovda.shopview.utils.ProductUtils.generateRandomProduct;
 import static com.github.khalaimovda.shopview.utils.ProductUtils.generateRandomProducts;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertAll;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
@@ -57,71 +61,80 @@ class ProductServiceTest {
     private OrderProductService orderProductService;
 
     @Mock
-    private ImageRollbackService imageRollbackService;
+    FilePart imageFile;
 
     @InjectMocks
     private ProductServiceImpl productService;
 
     @Captor
-    private ArgumentCaptor<MockMultipartFile> imageFileCaptor;
+    private ArgumentCaptor<FilePart> imageFileCaptor;
 
     @Captor
     private ArgumentCaptor<Product> productCaptor;
 
     @Captor
+    private ArgumentCaptor<List<Long>> productIdsCaptor;
+
+    @Captor
     private ArgumentCaptor<Pageable> pageableCaptor;
 
-//    @Test
-//    void testCreateProduct() {
-//        // Arrange
-//        MockMultipartFile imageFile = new MockMultipartFile("image", "test.jpg", "image/jpeg", new byte[100]);
-//        ProductCreateForm form = ProductCreateForm.builder()
-//            .name("TestName")
-//            .description("TestDescription")
-//            .image(imageFile)
-//            .price(new BigDecimal("82.13"))
-//            .build();
-//        when(imageService.saveImage(any())).thenReturn("image_path");
-//
-//        // Act
-//        productService.createProduct(form);
-//
-//        // Assert
-//        verify(imageService, times(1)).saveImage(imageFileCaptor.capture());
-//        assertEquals(imageFile, imageFileCaptor.getValue());
-//
-//        verify(imageRollbackService, times(1)).registerImageRollback("image_path");
-//
-//        verify(productRepository, times(1)).save(productCaptor.capture());
-//        assertAll(
-//            "Check Product fields",
-//            () -> assertEquals(form.getName(), productCaptor.getValue().getName()),
-//            () -> assertEquals(form.getDescription(), productCaptor.getValue().getDescription()),
-//            () -> assertEquals("image_path", productCaptor.getValue().getImagePath()),
-//            () -> assertEquals(form.getPrice(), productCaptor.getValue().getPrice())
-//        );
-//    }
+    @Test
+    void testCreateProduct() {
+        // Arrange
+        ProductCreateForm form = ProductCreateForm.builder()
+            .name("TestName")
+            .description("TestDescription")
+            .image(imageFile)
+            .price(new BigDecimal("82.13"))
+            .build();
+        when(imageService.saveImage(any(FilePart.class))).thenReturn(Mono.just("image_path"));
+        when(productRepository.save(any(Product.class))).thenReturn(Mono.just(new Product()));
+
+        // Act
+        Mono<Void> monoResult = productService.createProduct(form);
+
+        // Assert
+        StepVerifier.create(monoResult).verifyComplete();
+
+        verify(imageService, times(1)).saveImage(imageFileCaptor.capture());
+        assertEquals(imageFile, imageFileCaptor.getValue());
+
+        verify(productRepository, times(1)).save(productCaptor.capture());
+        assertAll(
+            "Check Product fields",
+            () -> assertEquals(form.getName(), productCaptor.getValue().getName()),
+            () -> assertEquals(form.getDescription(), productCaptor.getValue().getDescription()),
+            () -> assertEquals("image_path", productCaptor.getValue().getImagePath()),
+            () -> assertEquals(form.getPrice(), productCaptor.getValue().getPrice())
+        );
+    }
+
 
     @Test
     void testGetAllProducts() {
         // Arrange
         String contentSubstring = "Test search";
-        int totalElements = 15;
+        long totalElements = 15L;
         String imageServicePostfix = "/path";
 
         Pageable pageable = PageRequest.of(0, 3);
         List<Product> products = generateRandomProducts(3);
         Page<Product> page =  new PageImpl<>(products, pageable, totalElements);
-        when(productRepository.findAllByNameContainingIgnoreCaseOrDescriptionContainingIgnoreCase(
-            anyString(), anyString(), any())
-        ).thenReturn(page);
+
+        when(productRepository.countByNameOrDescriptionContaining(anyString(), anyString()))
+            .thenReturn(Mono.just(totalElements));
+
+        when(productRepository.findByNameOrDescriptionContaining(anyString(), anyString(), anyInt(), anyLong()))
+            .thenReturn(Flux.just(products.toArray(new Product[0])));
 
         Order activeOrder = generateRandomActiveOrder(List.of(products.getFirst()));
-        when(orderRepository.findByIsActiveTrue()).thenReturn(Optional.of(activeOrder));
+        when(orderRepository.findByIsActiveTrue())
+            .thenReturn(Mono.just(activeOrder));
 
-        Integer count = activeOrder.getOrderProducts().getFirst().getCount();
-        Map<Long, Integer> productIdCountMap = Map.of(products.getFirst().getId(), count);
-        when(orderProductService.getProductIdCountMap(any(), any())).thenReturn(productIdCountMap);
+        Integer firstProductCount = 4;
+        Map<Long, Integer> productIdCountMap = Map.of(products.getFirst().getId(), firstProductCount);
+        when(orderProductService.getProductIdCountMap(anyLong(), anyList()))
+            .thenReturn(Mono.just(productIdCountMap));
 
         when(imageService.getImageSrcPath(anyString())).thenAnswer(invocation -> {
             String imagePath = invocation.getArgument(0);
@@ -138,36 +151,46 @@ class ProductServiceTest {
 
 
         // Act
-        Page<ProductListItem> resultProductPage = productService.getAllProducts(contentSubstring, pageable);
+        Mono<Page<ProductListItem>> monoProductPage = productService.getAllProducts(contentSubstring, pageable);
 
         // Assert
+        StepVerifier
+            .create(monoProductPage)
+            .assertNext(resultPage -> assertAll(
+                () -> assertEquals(pageable.getPageNumber(), resultPage.getPageable().getPageNumber()),
+                () -> assertEquals(pageable.getPageSize(), resultPage.getPageable().getPageSize()),
+                () -> assertEquals(totalElements, resultPage.getTotalElements()),
+                () -> assertEquals(expectedResultProducts, resultPage.getContent())
+            ))
+            .verifyComplete();
+
         verify(productRepository, times(1))
-            .findAllByNameContainingIgnoreCaseOrDescriptionContainingIgnoreCase(
-                eq(contentSubstring),
-                eq(contentSubstring),
-                pageableCaptor.capture()
-            );
-        assertAll(
-            "Check pageable argument",
-            () -> assertEquals(pageable.getPageNumber(), pageableCaptor.getValue().getPageNumber()),
-            () -> assertEquals(pageable.getPageSize(), pageableCaptor.getValue().getPageSize())
-        );
+            .countByNameOrDescriptionContaining(eq(contentSubstring), eq(contentSubstring));
+
+        verify(productRepository, times(1))
+            .findByNameOrDescriptionContaining(eq(contentSubstring), eq(contentSubstring), eq(pageable.getPageSize()), eq(pageable.getOffset()));
+
+        verify(orderRepository, times(1))
+            .findByIsActiveTrue();
+
+        verify(orderProductService, times(1))
+            .getProductIdCountMap(eq(activeOrder.getId()), productIdsCaptor.capture());
+        assertEquals(products.stream().map(Product::getId).toList(), productIdsCaptor.getValue());
 
         verify(imageService, times(3)).getImageSrcPath(anyString());
-
-        assertEquals(expectedResultProducts, resultProductPage.getContent());
-        assertAll(
-            () -> assertEquals(pageable.getPageNumber(), resultProductPage.getPageable().getPageNumber()),
-            () -> assertEquals(pageable.getPageSize(), resultProductPage.getPageable().getPageSize())
-        );
-        assertEquals(totalElements, resultProductPage.getTotalElements());
     }
 
     @Test
     void testGetProductByIdNotFound() {
         long productId = 135L;
-        when(productRepository.findById(productId)).thenReturn(Optional.empty());
-        assertThrows(NoSuchElementException.class, () -> productService.getProductById(productId));
+        when(productRepository.findById(productId)).thenReturn(Mono.empty());
+
+        Mono<ProductDetail> monoProduct = productService.getProductById(productId);
+
+        StepVerifier
+            .create(monoProduct)
+            .expectError(NoSuchElementException.class)
+            .verify();
         verify(productRepository, times(1)).findById(productId);
     }
 
@@ -177,14 +200,17 @@ class ProductServiceTest {
         String imageServicePostfix = "/path";
         Product product = generateRandomProduct();
 
-        when(productRepository.findById(anyLong())).thenReturn(Optional.of(product));
+        when(productRepository.findById(anyLong()))
+            .thenReturn(Mono.just(product));
 
         Order activeOrder = generateRandomActiveOrder(List.of(product));
-        when(orderRepository.findByIsActiveTrue()).thenReturn(Optional.of(activeOrder));
+        when(orderRepository.findByIsActiveTrue())
+            .thenReturn(Mono.just(activeOrder));
 
-        OrderProduct orderProduct = activeOrder.getOrderProducts().getFirst();
+        OrderProduct orderProduct = generateRandomOrderProduct(activeOrder.getId(), product.getId());
         Integer count = orderProduct.getCount();
-        when(orderProductRepository.findById(any())).thenReturn(Optional.of(orderProduct));
+        when(orderProductRepository.findByOrderIdAndProductId(anyLong(), anyLong()))
+            .thenReturn(Mono.just(orderProduct));
 
         when(imageService.getImageSrcPath(anyString())).thenAnswer(invocation -> {
             String imagePath = invocation.getArgument(0);
@@ -195,13 +221,17 @@ class ProductServiceTest {
             product, product.getImagePath() + imageServicePostfix, count);
 
         // Act
-        ProductDetail productDetail = productService.getProductById(product.getId());
+        Mono<ProductDetail> monoProductDetail = productService.getProductById(product.getId());
 
         // Assert
+        StepVerifier
+            .create(monoProductDetail)
+            .assertNext(productDetail -> assertEquals(expectedProductDetail, productDetail))
+            .verifyComplete();
+
         verify(productRepository, times(1)).findById(product.getId());
         verify(orderRepository, times(1)).findByIsActiveTrue();
-        verify(orderProductRepository, times(1)).findById(any());
+        verify(orderProductRepository, times(1)).findByOrderIdAndProductId(anyLong(), anyLong());
         verify(imageService, times(1)).getImageSrcPath(product.getImagePath());
-        assertEquals(expectedProductDetail, productDetail);
     }
 }

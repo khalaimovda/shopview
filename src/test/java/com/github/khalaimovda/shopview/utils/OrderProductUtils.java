@@ -10,34 +10,31 @@ public class OrderProductUtils {
 
     private static final Random random = new Random();
 
-    public static OrderProduct generateRandomOrderProduct(Order order, Product product) {
-        OrderProductId orderProductId = new OrderProductId();
-        orderProductId.setOrderId(order.getId());
-        orderProductId.setProductId(product.getId());
-
+    public static OrderProduct generateRandomOrderProduct(Long orderId, Long productId) {
         OrderProduct orderProduct = new OrderProduct();
-        orderProduct.setId(orderProductId);
-        orderProduct.setProduct(product);
-        orderProduct.setOrder(order);
+        orderProduct.setId(random.nextLong(1, Long.MAX_VALUE));
+        orderProduct.setProductId(productId);
+        orderProduct.setOrderId(orderId);
         orderProduct.setCount(random.nextInt(1, 10));
-
         return orderProduct;
     }
 
-    public static List<OrderProduct> generateRandomOrderProducts(Order order, List<Product> products) {
-        return products.stream().map(product -> generateRandomOrderProduct(order, product)).toList();
+    public static List<OrderProduct> generateRandomOrderProducts(Long orderId, List<Long> productIds) {
+        return productIds.stream().map(productId -> generateRandomOrderProduct(orderId, productId)).toList();
     }
 
     /**
      * Suppose that all order_product items belong to one order
      */
-    public static BigDecimal calculateTotalPrice(List<OrderProduct> orderProducts) {
-        return orderProducts.stream().map(
-            orderProduct -> {
-                BigDecimal price = orderProduct.getProduct().getPrice();
-                Integer count = orderProduct.getCount();
-                return price.multiply(new BigDecimal(count));
-            }
-        ).reduce(BigDecimal.ZERO, BigDecimal::add);
+    public static BigDecimal calculateTotalPrice(Long orderId, List<Product> products, List<OrderProduct> orderProducts) {
+        // todo: implement
+        return BigDecimal.ZERO;
+//        return orderProducts.stream().map(
+//            orderProduct -> {
+//                BigDecimal price = orderProduct.getProduct().getPrice();
+//                Integer count = orderProduct.getCount();
+//                return price.multiply(new BigDecimal(count));
+//            }
+//        ).reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 }

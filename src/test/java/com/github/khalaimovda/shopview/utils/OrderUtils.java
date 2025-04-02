@@ -3,8 +3,6 @@ package com.github.khalaimovda.shopview.utils;
 import com.github.khalaimovda.shopview.dto.OrderDetail;
 import com.github.khalaimovda.shopview.dto.ProductOfOrder;
 import com.github.khalaimovda.shopview.model.Order;
-import com.github.khalaimovda.shopview.model.OrderProduct;
-import com.github.khalaimovda.shopview.model.OrderProductId;
 import com.github.khalaimovda.shopview.model.Product;
 
 import java.math.BigDecimal;
@@ -23,7 +21,6 @@ public class OrderUtils {
         Order order = new Order();
         order.setId(random.nextLong(1, Long.MAX_VALUE));
         order.setIsActive(false);
-        order.setOrderProducts(generateRandomOrderProducts(order, products));
         return order;
     }
 
@@ -37,35 +34,35 @@ public class OrderUtils {
         return listOfProducts.stream().map(OrderUtils::generateRandomNotActiveOrder).toList();
     }
 
-    public static BigDecimal calculateOrderPrice(Order order) {
-        return calculateTotalPrice(order.getOrderProducts());
-    }
+//    public static BigDecimal calculateOrderPrice(Order order) {
+//        return calculateTotalPrice(order.getOrderProducts());
+//    }
 
-    public static List<ProductOfOrder> getProductOfOrderList(Order order) {
-        return order.getOrderProducts().stream().map(
-            orderProduct -> {
-                Product product = orderProduct.getProduct();
+//    public static List<ProductOfOrder> getProductOfOrderList(Order order) {
+//        return order.getOrderProducts().stream().map(
+//            orderProduct -> {
+//                Product product = orderProduct.getProduct();
+//
+//                ProductOfOrder productOfOrder = new ProductOfOrder();
+//                productOfOrder.setId(product.getId());
+//                productOfOrder.setName(product.getName());
+//                productOfOrder.setPrice(product.getPrice());
+//                productOfOrder.setCount(orderProduct.getCount());
+//                productOfOrder.setTotalPrice(product.getPrice().multiply(new BigDecimal(orderProduct.getCount())));
+//
+//                return productOfOrder;
+//            }
+//        ).toList();
+//    }
 
-                ProductOfOrder productOfOrder = new ProductOfOrder();
-                productOfOrder.setId(product.getId());
-                productOfOrder.setName(product.getName());
-                productOfOrder.setPrice(product.getPrice());
-                productOfOrder.setCount(orderProduct.getCount());
-                productOfOrder.setTotalPrice(product.getPrice().multiply(new BigDecimal(orderProduct.getCount())));
-
-                return productOfOrder;
-            }
-        ).toList();
-    }
-
-    public static OrderDetail getOrderDetail(Order order) {
-        OrderDetail orderDetail = new OrderDetail();
-        orderDetail.setOderId(order.getId());
-        orderDetail.setProducts(
-            getProductOfOrderList(order).stream()
-                .sorted(Comparator.comparing(ProductOfOrder::getName)).toList() // Sort products by name
-        );
-        orderDetail.setTotalPrice(calculateOrderPrice(order));
-        return orderDetail;
-    }
+//    public static OrderDetail getOrderDetail(Order order) {
+//        OrderDetail orderDetail = new OrderDetail();
+//        orderDetail.setOderId(order.getId());
+//        orderDetail.setProducts(
+//            getProductOfOrderList(order).stream()
+//                .sorted(Comparator.comparing(ProductOfOrder::getName)).toList() // Sort products by name
+//        );
+//        orderDetail.setTotalPrice(calculateOrderPrice(order));
+//        return orderDetail;
+//    }
 }

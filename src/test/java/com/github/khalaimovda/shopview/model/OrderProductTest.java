@@ -20,7 +20,7 @@ public class OrderProductTest {
         List<Product> products = generateRandomProducts(5);
         Product product = products.getFirst();
         Order order = generateRandomNotActiveOrder(products);
-        this.orderProduct = generateRandomOrderProduct(order, product);
+        this.orderProduct = generateRandomOrderProduct(order.getId(), product.getId());
     }
 
     @Test
