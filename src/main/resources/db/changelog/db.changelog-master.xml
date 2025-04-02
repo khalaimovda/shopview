@@ -8,5 +8,6 @@
     <include file="001-products.xml" relativeToChangelogFile="true"/>
     <include file="002-orders.xml" relativeToChangelogFile="true"/>
     <include file="003-order_product.xml" relativeToChangelogFile="true"/>
+    <include file="004-order_product_change_primary_key.xml" relativeToChangelogFile="true"/>
 
 </databaseChangeLog>

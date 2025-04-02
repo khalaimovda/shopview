@@ -36,6 +36,7 @@ dependencies {
 	implementation 'org.ehcache:ehcache:3.10.8:jakarta'
 	compileOnly 'org.projectlombok:lombok'
 	runtimeOnly 'org.postgresql:r2dbc-postgresql:1.0.7.RELEASE'
+	runtimeOnly 'org.postgresql:postgresql' // Required for liquibase
 	annotationProcessor 'org.projectlombok:lombok'
 	annotationProcessor 'org.mapstruct:mapstruct-processor:1.6.3'
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
