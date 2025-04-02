@@ -22,7 +22,7 @@ public class OrderProductServiceImpl implements OrderProductService {
         return orderProductRepository
             .findAllByOrderIdAndProductIdIn(orderId, productIds)
             .collect(Collectors.toMap(
-                OrderProduct::getOrderId,
+                OrderProduct::getProductId,
                 OrderProduct::getCount));
     }
 
@@ -37,9 +37,10 @@ public class OrderProductServiceImpl implements OrderProductService {
             .findByOrderIdAndProductId(orderId, productId)
             .flatMap(orderProduct -> {
                 orderProduct.incrementCount();
-                return orderProductRepository.save(orderProduct).then();
+                return orderProductRepository.save(orderProduct);
             })
-            .switchIfEmpty(orderProductRepository.save(new OrderProduct(orderId, productId, 1)).then());
+            .switchIfEmpty(orderProductRepository.save(new OrderProduct(orderId, productId, 1)))
+            .then();
     }
 
     @Override
