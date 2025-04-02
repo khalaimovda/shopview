@@ -70,9 +70,8 @@ public class ProductServiceImpl implements ProductService {
     @Override
     public Mono<Void> createProduct(ProductCreateForm form) {
         return imageService.saveImage(form.getImage())
-            .onErrorComplete()
             .map(imagePath -> productMapper.toProduct(form, imagePath))
-            .map(productRepository::save)
+            .flatMap(productRepository::save)
             .then();
     }
 

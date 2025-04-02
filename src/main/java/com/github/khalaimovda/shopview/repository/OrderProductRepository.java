@@ -13,9 +13,10 @@ import java.util.List;
 @Repository
 public interface OrderProductRepository extends ReactiveCrudRepository<OrderProduct, Long> {
 
-    // Auto query building does not work for "IN" condition in react repo
+    // Auto query building does not work
     @Query("SELECT * FROM order_product WHERE order_id = :orderId AND product_id IN (:productIds)")
     Flux<OrderProduct> findAllByOrderIdAndProductIdIn(Long orderId, @Param("productIds") List<Long> productIds);
 
+    @Query("SELECT * FROM order_product WHERE order_id = :orderId AND product_id = :productId")
     Mono<OrderProduct> findByOrderIdAndProductId(Long orderId, Long productId);
 }
