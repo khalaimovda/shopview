@@ -30,9 +30,9 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-validation'
 	implementation 'org.liquibase:liquibase-core'
 	implementation 'jakarta.validation:jakarta.validation-api'
-	implementation 'org.hibernate.validator:hibernate-validator:8.0.1.Final' // todo: Обновить?
+	implementation 'org.hibernate.validator:hibernate-validator:8.0.1.Final'
 	implementation 'org.mapstruct:mapstruct:1.6.3'
-	implementation 'org.hibernate.orm:hibernate-jcache:6.5.2.Final' // todo: Обновить?
+	implementation 'org.hibernate.orm:hibernate-jcache:6.5.2.Final'
 	implementation 'org.ehcache:ehcache:3.10.8:jakarta'
 	compileOnly 'org.projectlombok:lombok'
 	runtimeOnly 'org.postgresql:r2dbc-postgresql:1.0.7.RELEASE'
@@ -43,6 +43,7 @@ dependencies {
 	testImplementation 'org.springframework.boot:spring-boot-testcontainers'
 	testImplementation 'org.testcontainers:junit-jupiter'
 	testImplementation 'org.testcontainers:postgresql'
+	testImplementation 'io.projectreactor:reactor-test'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
 
