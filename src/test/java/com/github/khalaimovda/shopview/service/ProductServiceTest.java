@@ -127,7 +127,7 @@ class ProductServiceTest {
         when(productRepository.findByNameOrDescriptionContaining(anyString(), anyString(), anyInt(), anyLong()))
             .thenReturn(Flux.just(products.toArray(new Product[0])));
 
-        Order activeOrder = generateRandomActiveOrder(List.of(products.getFirst()));
+        Order activeOrder = generateRandomActiveOrder();
         when(orderRepository.findByIsActiveTrue())
             .thenReturn(Mono.just(activeOrder));
 
@@ -203,7 +203,7 @@ class ProductServiceTest {
         when(productRepository.findById(anyLong()))
             .thenReturn(Mono.just(product));
 
-        Order activeOrder = generateRandomActiveOrder(List.of(product));
+        Order activeOrder = generateRandomActiveOrder();
         when(orderRepository.findByIsActiveTrue())
             .thenReturn(Mono.just(activeOrder));
 

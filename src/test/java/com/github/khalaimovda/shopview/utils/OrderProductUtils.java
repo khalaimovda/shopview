@@ -1,6 +1,7 @@
 package com.github.khalaimovda.shopview.utils;
 
-import com.github.khalaimovda.shopview.model.*;
+import com.github.khalaimovda.shopview.dto.ProductOfOrder;
+import com.github.khalaimovda.shopview.model.OrderProduct;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -26,15 +27,7 @@ public class OrderProductUtils {
     /**
      * Suppose that all order_product items belong to one order
      */
-    public static BigDecimal calculateTotalPrice(Long orderId, List<Product> products, List<OrderProduct> orderProducts) {
-        // todo: implement
-        return BigDecimal.ZERO;
-//        return orderProducts.stream().map(
-//            orderProduct -> {
-//                BigDecimal price = orderProduct.getProduct().getPrice();
-//                Integer count = orderProduct.getCount();
-//                return price.multiply(new BigDecimal(count));
-//            }
-//        ).reduce(BigDecimal.ZERO, BigDecimal::add);
+    public static BigDecimal calculateTotalPrice(List<ProductOfOrder> products) {
+        return products.stream().map(ProductOfOrder::getTotalPrice).reduce(BigDecimal::add).get();
     }
 }

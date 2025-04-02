@@ -22,9 +22,6 @@ public class ProductUtils {
     }
 
     public static List<Product> generateRandomProducts(int count) {
-        if (count < 0) {
-            throw new IllegalArgumentException("Count must be positive");
-        }
         return Stream.generate(ProductUtils::generateRandomProduct).limit(count).toList();
     }
 }

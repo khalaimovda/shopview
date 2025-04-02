@@ -2,6 +2,7 @@ package com.github.khalaimovda.shopview.service;
 
 import com.github.khalaimovda.shopview.dto.OrderDetail;
 import com.github.khalaimovda.shopview.dto.OrderListItem;
+import com.github.khalaimovda.shopview.dto.OrderWithProducts;
 import com.github.khalaimovda.shopview.mapper.OrderMapper;
 import com.github.khalaimovda.shopview.mapper.ProductMapper;
 import com.github.khalaimovda.shopview.model.Order;
@@ -14,15 +15,16 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
+import reactor.test.StepVerifier;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Stream;
 
 import static com.github.khalaimovda.shopview.utils.OrderUtils.*;
 import static com.github.khalaimovda.shopview.utils.ProductUtils.generateRandomProducts;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -45,10 +47,11 @@ public class OrderServiceTest {
         // Arrange
         List<List<Product>> listOfProducts = Stream.generate(() -> generateRandomProducts(5)).limit(5).toList();
 
-        List<Order> orders = generateRandomOrders(listOfProducts);
-        when(orderRepository.findAllByIsActiveFalseOrderByIdDesc()).thenReturn(orders);
+        List<OrderWithProducts> ordersWithProducts = generateRandomOrdersWithProducts(5);
+        when(orderRepository.findAllPlacedOrdersWithProducts())
+            .thenReturn(Flux.just(ordersWithProducts.toArray(new OrderWithProducts[0])));
 
-        List<OrderListItem> expectedOrderListItems = orders.stream()
+        List<OrderListItem> expectedOrderListItems = ordersWithProducts.stream()
             .map(order -> {
                 OrderListItem orderListItem = new OrderListItem();
                 orderListItem.setId(order.getId());
@@ -57,44 +60,35 @@ public class OrderServiceTest {
             }).toList();
 
         // Act
-        List<OrderListItem> orderListItems = orderService.getAllOrders();
+        Flux<OrderListItem> fluxOrderListItems = orderService.getAllOrders();
 
         // Assert
-        verify(orderRepository, times(1)).findAllByIsActiveFalseOrderByIdDesc();
-        assertEquals(expectedOrderListItems, orderListItems);
+        StepVerifier
+            .create(fluxOrderListItems.collectList())
+            .assertNext(orderListItems ->  assertEquals(expectedOrderListItems, orderListItems))
+            .verifyComplete();
+
+        verify(orderRepository, times(1)).findAllPlacedOrdersWithProducts();
     }
 
     @Test
-    void testGetOrderDetailById() {
+    void testGetOrderDetail() {
         // Arrange
         List<Product> products = generateRandomProducts(5);
-        Order order = generateRandomNotActiveOrder(products);
-        when(orderRepository.findById(anyLong())).thenReturn(Optional.of(order));
-        OrderDetail expectedOrderDetail = getOrderDetail(order);
+        Order order = generateRandomNotActiveOrder();
+        OrderWithProducts orderWithProducts = generateRandomOrderWithProducts(order.getId(), products);
+        when(orderRepository.findOrderWithProductsById(anyLong())).thenReturn(Mono.just(orderWithProducts));
+        OrderDetail expectedOrderDetail = getOrderDetail(orderWithProducts);
 
         // Act
-        Optional<OrderDetail> optionalOrderDetail = orderService.getOrderDetail(order.getId());
+        Mono<OrderDetail> monoOrderDetail = orderService.getOrderDetail(order.getId());
 
         // Assert
-        verify(orderRepository, times(1)).findById(order.getId());
+        StepVerifier
+            .create(monoOrderDetail)
+            .assertNext(orderDetail -> assertEquals(expectedOrderDetail, orderDetail))
+            .verifyComplete();
 
-        assertTrue(optionalOrderDetail.isPresent());
-
-        OrderDetail orderDetail = optionalOrderDetail.get();
-        assertEquals(expectedOrderDetail, orderDetail);
-    }
-
-    @Test
-    void testGetOrderDetailByOrder() {
-        // Arrange
-        List<Product> products = generateRandomProducts(5);
-        Order order = generateRandomNotActiveOrder(products);
-        OrderDetail expectedOrderDetail = getOrderDetail(order);
-
-        // Act
-        OrderDetail orderDetail = orderService.getOrderDetail(order);
-
-        // Assert
-        assertEquals(expectedOrderDetail, orderDetail);
+        verify(orderRepository, times(1)).findOrderWithProductsById(order.getId());
     }
 }
