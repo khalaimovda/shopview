@@ -3,32 +3,35 @@ package com.github.khalaimovda.shopview.controller;
 
 import com.github.khalaimovda.shopview.dto.OrderDetail;
 import com.github.khalaimovda.shopview.dto.OrderListItem;
+import com.github.khalaimovda.shopview.dto.OrderWithProducts;
 import com.github.khalaimovda.shopview.mapper.OrderMapper;
+import com.github.khalaimovda.shopview.model.Order;
+import com.github.khalaimovda.shopview.model.Product;
 import com.github.khalaimovda.shopview.service.OrderService;
-import com.github.khalaimovda.shopview.utils.OrderUtils;
 import org.junit.jupiter.api.Test;
 import org.mapstruct.factory.Mappers;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.autoconfigure.web.reactive.WebFluxTest;
+import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
-import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.reactive.server.WebTestClient;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 import java.util.List;
-import java.util.Optional;
-import java.util.stream.Stream;
 
 import static com.github.khalaimovda.shopview.utils.OrderUtils.*;
 import static com.github.khalaimovda.shopview.utils.ProductUtils.generateRandomProducts;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.*;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 
-@WebMvcTest(OrderController.class)
+@WebFluxTest(OrderController.class)
 public class OrderControllerTest {
 
     @Autowired
-    private MockMvc mockMvc;
+    private WebTestClient webTestClient;
 
     @MockitoBean
     private OrderService orderService;
@@ -37,34 +40,56 @@ public class OrderControllerTest {
 
     @Test
     void testGetAllOrders() throws Exception {
-        List<OrderListItem> orders = generateRandomOrders(
-            Stream.generate(() -> generateRandomProducts(5)).limit(5).toList()
-        ).stream()
-            .map(OrderUtils::getOrderDetail)
-            .map(orderMapper::toOrderListItem)
-            .toList();
+        List<OrderWithProducts> ordersWithProducts = generateRandomOrdersWithProducts(5);
+        List<OrderListItem> orders = ordersWithProducts.stream()
+            .map(order -> {
+                OrderListItem orderListItem = new OrderListItem();
+                orderListItem.setId(order.getId());
+                orderListItem.setPrice(calculateOrderPrice(order));
+                return orderListItem;
+            }).toList();
 
-        when(orderService.getAllOrders()).thenReturn(orders);
+        when(orderService.getAllOrders())
+            .thenReturn(Flux.just(orders.toArray(new OrderListItem[0])));
 
-        mockMvc.perform(get("/orders"))
-            .andExpect(status().isOk())
-            .andExpect(content().contentType("text/html;charset=UTF-8"))
-            .andExpect(view().name("orders"));
+        webTestClient
+            .get()
+            .uri("/orders")
+            .exchange()
+            .expectStatus().isOk()
+            .expectHeader().contentType(MediaType.TEXT_HTML)
+            .expectBody(String.class)
+            .consumeWith(response -> {
+                String body = response.getResponseBody();
+                assertNotNull(body);
+                assertTrue(body.contains("orders"));
+            });
 
         verify(orderService, times(1)).getAllOrders();
     }
 
     @Test
     void testGetOrderById() throws Exception {
-        long orderId = 13L;
-        OrderDetail orderDetail = getOrderDetail(generateRandomNotActiveOrder(generateRandomProducts(5)));
-        when(orderService.getOrderDetail(anyLong())).thenReturn(Optional.of(orderDetail));
+        List<Product> products = generateRandomProducts(5);
+        Order order = generateRandomNotActiveOrder();
+        OrderWithProducts orderWithProducts = generateRandomOrderWithProducts(order.getId(), products);
+        OrderDetail orderDetail = getOrderDetail(orderWithProducts);
 
-        mockMvc.perform(get("/orders/" + orderId))
-            .andExpect(status().isOk())
-            .andExpect(content().contentType("text/html;charset=UTF-8"))
-            .andExpect(view().name("order"));
+        when(orderService.getOrderDetail(anyLong())).thenReturn(Mono.just(orderDetail));
 
-        verify(orderService, times(1)).getOrderDetail(orderId);
+        webTestClient
+            .get()
+            .uri("/orders/" + order.getId())
+            .exchange()
+            .expectStatus().isOk()
+            .expectHeader().contentType(MediaType.TEXT_HTML)
+            .expectBody(String.class)
+            .consumeWith(response -> {
+                String body = response.getResponseBody();
+                assertNotNull(body);
+                assertTrue(body.contains("products"));
+            });
+
+        verify(orderService, times(1)).getOrderDetail(order.getId());
     }
 }

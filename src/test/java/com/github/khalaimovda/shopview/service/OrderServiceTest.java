@@ -45,8 +45,6 @@ public class OrderServiceTest {
     @Test
     void testGetAllOrders() {
         // Arrange
-        List<List<Product>> listOfProducts = Stream.generate(() -> generateRandomProducts(5)).limit(5).toList();
-
         List<OrderWithProducts> ordersWithProducts = generateRandomOrdersWithProducts(5);
         when(orderRepository.findAllPlacedOrdersWithProducts())
             .thenReturn(Flux.just(ordersWithProducts.toArray(new OrderWithProducts[0])));
