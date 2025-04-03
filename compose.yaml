@@ -12,15 +12,34 @@ services:
       - db-data:/var/lib/postgresql/data
 
   shopview:
-    image: shopview:0.0.1-SNAPSHOT
-    restart: always
+    build: .
+    depends_on:
+      - db
     environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/shop
-      SPRING_DATASOURCE_USERNAME: username
-      SPRING_DATASOURCE_PASSWORD: password
+      SPRING_R2DBC_URL: r2dbc:postgresql://db:5432/shop
+      SPRING_R2DBC_USERNAME: username
+      SPRING_R2DBC_PASSWORD: password
       APP_IMAGES_UPLOAD_DIR: /tmp/uploads/images
+      SPRING_LIQUIBASE_URL: jdbc:postgresql://db:5432/shop
+      SPRING_LIQUIBASE_USER: username
+      SPRING_LIQUIBASE_PASSWORD: password
     ports:
       - 8080:8080
+
+  db-init:
+    image: postgres:17.4
+    depends_on:
+      - db
+    environment:
+      PGPASSWORD: password
+    volumes:
+      - ./infra/data.sql:/data.sql:ro
+    entrypoint: >
+      sh -c "until pg_isready -h db -p 5432; do echo 'Waiting for DB...'; sleep 1; done;
+             echo 'Running data initialization'; psql -h db -U username -d shop -f /data.sql"
+    restart: "no"
+    profiles:
+      - db-init
 
 volumes:
   db-data:
