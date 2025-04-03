@@ -6,6 +6,9 @@ import com.github.khalaimovda.shopview.model.Product;
 import com.github.khalaimovda.shopview.repository.OrderRepository;
 import com.github.khalaimovda.shopview.repository.ProductRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import reactor.core.publisher.Mono;
@@ -25,7 +28,7 @@ public class CartServiceImpl implements CartService {
 
     @Override
     @Transactional
-//    @Cacheable(value = "orders", key = "'cart'")
+    @Cacheable(value = "orders", key = "'cart'")
     public Mono<OrderDetail> getCart() {
         return orderRepository
             .findByIsActiveTrue()
@@ -34,10 +37,10 @@ public class CartServiceImpl implements CartService {
 
     @Override
     @Transactional
-//    @Caching(evict = {
-//        @CacheEvict(value = "products", allEntries = true),
-//        @CacheEvict(value = "orders", allEntries = true)
-//    })
+    @Caching(evict = {
+        @CacheEvict(value = "products", allEntries = true),
+        @CacheEvict(value = "orders", allEntries = true)
+    })
     public Mono<Void> addProductToCart(Long productId) {
         return getProductByIdOrNoSuchElementException(productId)
             .flatMap(product -> getOrCreateActiveOrder()
@@ -46,10 +49,10 @@ public class CartServiceImpl implements CartService {
 
     @Override
     @Transactional
-//    @Caching(evict = {
-//        @CacheEvict(value = "products", allEntries = true),
-//        @CacheEvict(value = "orders", allEntries = true)
-//    })
+    @Caching(evict = {
+        @CacheEvict(value = "products", allEntries = true),
+        @CacheEvict(value = "orders", allEntries = true)
+    })
     public Mono<Void> decreaseProductInCart(Long productId) {
         return getProductByIdOrNoSuchElementException(productId)
             .flatMap(product -> getActiveOrderOrNoSuchElementException()
@@ -58,10 +61,10 @@ public class CartServiceImpl implements CartService {
 
     @Override
     @Transactional
-//    @Caching(evict = {
-//        @CacheEvict(value = "products", allEntries = true),
-//        @CacheEvict(value = "orders", allEntries = true)
-//    })
+    @Caching(evict = {
+        @CacheEvict(value = "products", allEntries = true),
+        @CacheEvict(value = "orders", allEntries = true)
+    })
     public Mono<Void> removeProductFromCart(Long productId) {
         return getProductByIdOrNoSuchElementException(productId)
             .flatMap(product -> getActiveOrderOrNoSuchElementException()
@@ -70,10 +73,10 @@ public class CartServiceImpl implements CartService {
 
     @Override
     @Transactional
-//    @Caching(evict = {
-//        @CacheEvict(value = "products", allEntries = true),
-//        @CacheEvict(value = "orders", allEntries = true)
-//    })
+    @Caching(evict = {
+        @CacheEvict(value = "products", allEntries = true),
+        @CacheEvict(value = "orders", allEntries = true)
+    })
     public Mono<Void> checkout() {
         return getActiveOrderOrNoSuchElementException()
             .flatMap(cart -> orderService

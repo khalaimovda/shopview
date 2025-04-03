@@ -3,7 +3,6 @@ package com.github.khalaimovda.shopview.service;
 import com.github.khalaimovda.shopview.dto.OrderDetail;
 import com.github.khalaimovda.shopview.dto.OrderListItem;
 import com.github.khalaimovda.shopview.mapper.OrderMapper;
-import com.github.khalaimovda.shopview.mapper.ProductMapper;
 import com.github.khalaimovda.shopview.repository.OrderRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.Cacheable;
@@ -18,7 +17,6 @@ import java.util.NoSuchElementException;
 public class OrderServiceImpl implements OrderService {
 
     private final OrderRepository orderRepository;
-    private final ProductMapper productMapper;
     private final OrderMapper orderMapper;
 
     @Override
@@ -30,7 +28,7 @@ public class OrderServiceImpl implements OrderService {
     }
 
     @Override
-//    @Cacheable(value = "orders", key = "#id")
+    @Cacheable(value = "orders", key = "#id")
     public Mono<OrderDetail> getOrderDetail(Long id) {
         return orderRepository
             .findOrderWithProductsById(id)

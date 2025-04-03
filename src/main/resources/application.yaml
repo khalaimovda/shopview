@@ -28,17 +28,11 @@ spring:
     url: jdbc:postgresql://localhost:5432/shop
     user: username
     password: password
-#  jpa:
-#    show-sql: true
-#    properties:
-#      # todo: ReactiveCaching (Caffeine, Redis) для реактивного приложения вместо стандартного кэширования
-#      hibernate:
-#        format_sql: true
-#        cache:
-#          use_second_level_cache: true
-#          region:
-#            factory_class: org.hibernate.cache.jcache.JCacheRegionFactory
-
+  cache:
+    type: caffeine
+    cache-names: orders,products
+    caffeine:
+      spec: maximumSize=1000,expireAfterWrite=30m
 app:
   images:
     upload-dir: uploads/images

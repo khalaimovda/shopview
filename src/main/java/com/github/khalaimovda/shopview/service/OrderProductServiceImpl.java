@@ -3,6 +3,8 @@ package com.github.khalaimovda.shopview.service;
 import com.github.khalaimovda.shopview.model.OrderProduct;
 import com.github.khalaimovda.shopview.repository.OrderProductRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import reactor.core.publisher.Mono;
@@ -28,10 +30,10 @@ public class OrderProductServiceImpl implements OrderProductService {
 
     @Override
     @Transactional
-//    @Caching(evict = {
-//        @CacheEvict(value = "products", allEntries = true),
-//        @CacheEvict(value = "orders", allEntries = true)
-//    })
+    @Caching(evict = {
+        @CacheEvict(value = "products", allEntries = true),
+        @CacheEvict(value = "orders", allEntries = true)
+    })
     public Mono<Void> addProductToOrder(Long orderId, Long productId) {
         return orderProductRepository
             .findByOrderIdAndProductId(orderId, productId)
@@ -47,10 +49,10 @@ public class OrderProductServiceImpl implements OrderProductService {
 
     @Override
     @Transactional
-//    @Caching(evict = {
-//        @CacheEvict(value = "products", allEntries = true),
-//        @CacheEvict(value = "orders", allEntries = true)
-//    })
+    @Caching(evict = {
+        @CacheEvict(value = "products", allEntries = true),
+        @CacheEvict(value = "orders", allEntries = true)
+    })
     public Mono<Void> decreaseProductInOrder(Long orderId, Long productId) {
         return orderProductRepository
             .findByOrderIdAndProductId(orderId, productId)
@@ -66,10 +68,10 @@ public class OrderProductServiceImpl implements OrderProductService {
 
     @Override
     @Transactional
-//    @Caching(evict = {
-//        @CacheEvict(value = "products", allEntries = true),
-//        @CacheEvict(value = "orders", allEntries = true)
-//    })
+    @Caching(evict = {
+        @CacheEvict(value = "products", allEntries = true),
+        @CacheEvict(value = "orders", allEntries = true)
+    })
     public Mono<Void> removeProductFromOrder(Long orderId, Long productId) {
         return orderProductRepository
             .findByOrderIdAndProductId(orderId, productId)
