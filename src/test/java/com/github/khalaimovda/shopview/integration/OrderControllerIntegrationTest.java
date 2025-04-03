@@ -1,29 +1,20 @@
 package com.github.khalaimovda.shopview.integration;
 
 
-import com.github.khalaimovda.shopview.model.Order;
-import com.github.khalaimovda.shopview.model.OrderProduct;
+import com.github.khalaimovda.shopview.dto.OrderWithProducts;
 import com.github.khalaimovda.shopview.repository.OrderProductRepository;
 import com.github.khalaimovda.shopview.repository.OrderRepository;
 import com.github.khalaimovda.shopview.repository.ProductRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.http.MediaType;
 
 import java.math.BigDecimal;
-import java.util.List;
 
-import static org.hamcrest.Matchers.containsString;
-import static org.hamcrest.Matchers.not;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static com.github.khalaimovda.shopview.utils.OrderUtils.calculateOrderPrice;
+import static org.junit.jupiter.api.Assertions.*;
 
-@AutoConfigureMockMvc
 public class OrderControllerIntegrationTest extends AbstractIntegrationTest {
-
-    @Autowired
-    private MockMvc mockMvc;
 
     @Autowired
     private OrderRepository orderRepository;
@@ -36,43 +27,47 @@ public class OrderControllerIntegrationTest extends AbstractIntegrationTest {
 
     @Test
     void testGetAllOrders() throws Exception {
+        Long orderId = orderRepository.findById(1L).block().getId();
+        OrderWithProducts order = orderRepository.findOrderWithProductsById(orderId).block();
+        BigDecimal totalPrice = calculateOrderPrice(order);
 
-        Order order = orderRepository.findById(1L).get();
-        List<OrderProduct> orderProducts = orderProductRepository.findAllByOrderIn(List.of(order));
-        BigDecimal totalPrice = BigDecimal.ZERO;
-        for (OrderProduct orderProduct : orderProducts) {
-            BigDecimal productPrice = productRepository.findById(orderProduct.getProduct().getId()).get().getPrice();
-            totalPrice.add(productPrice.multiply(new BigDecimal(orderProduct.getCount())));
-        }
-
-        mockMvc.perform(get("/orders"))
-            .andExpect(status().isOk())
-            .andExpect(content().contentType("text/html;charset=UTF-8"))
-            .andExpect(view().name("orders"))
-            .andExpect(content().string(not(containsString("Нет оформленных заказов"))))
-            .andExpect(content().string(containsString("Заказ #1")))
-            .andExpect(content().string(containsString(totalPrice + " ₽")));
+        webTestClient.get()
+            .uri("/orders")
+            .exchange()
+            .expectStatus().isOk()
+            .expectHeader().contentType(MediaType.TEXT_HTML)
+            .expectBody(String.class)
+            .consumeWith(response -> {
+                String body = response.getResponseBody();
+                assertNotNull(body);
+                assertTrue(body.contains("orders"));
+                assertFalse(body.contains("Нет оформленных заказов"));
+                assertTrue(body.contains("Заказ #1"));
+                assertTrue(body.contains(totalPrice + " ₽"));
+            });
     }
 
     @Test
     void testGetOrderById() throws Exception {
-        long orderId = 1L;
-        Order order = orderRepository.findById(orderId).get();
-        List<OrderProduct> orderProducts = orderProductRepository.findAllByOrderIn(List.of(order));
-        BigDecimal totalPrice = BigDecimal.ZERO;
-        for (OrderProduct orderProduct : orderProducts) {
-            BigDecimal productPrice = productRepository.findById(orderProduct.getProduct().getId()).get().getPrice();
-            totalPrice.add(productPrice.multiply(new BigDecimal(orderProduct.getCount())));
-        }
+        Long orderId = orderRepository.findById(1L).block().getId();
+        OrderWithProducts order = orderRepository.findOrderWithProductsById(orderId).block();
+        BigDecimal totalPrice = calculateOrderPrice(order);
 
-        mockMvc.perform(get("/orders/" + orderId))
-            .andExpect(status().isOk())
-            .andExpect(content().contentType("text/html;charset=UTF-8"))
-            .andExpect(view().name("order"))
-            .andExpect(content().string(containsString("Цена за единицу:")))
-            .andExpect(content().string(containsString("Количество:")))
-            .andExpect(content().string(containsString("Итого:")))
-            .andExpect(content().string(containsString("Общая сумма:")))
-            .andExpect(content().string(containsString(totalPrice.toString())));
+        webTestClient.get()
+            .uri("/orders/" + orderId)
+            .exchange()
+            .expectStatus().isOk()
+            .expectHeader().contentType(MediaType.TEXT_HTML)
+            .expectBody(String.class)
+            .consumeWith(response -> {
+                String body = response.getResponseBody();
+                assertNotNull(body);
+                assertTrue(body.contains("order"));
+                assertTrue(body.contains("Цена за единицу:"));
+                assertTrue(body.contains("Количество:"));
+                assertTrue(body.contains("Итого:"));
+                assertTrue(body.contains("Общая сумма:"));
+                assertTrue(body.contains(totalPrice.toString()));
+            });
     }
 }

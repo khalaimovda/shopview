@@ -17,6 +17,9 @@ public interface OrderProductRepository extends ReactiveCrudRepository<OrderProd
     @Query("SELECT * FROM order_product WHERE order_id = :orderId AND product_id IN (:productIds)")
     Flux<OrderProduct> findAllByOrderIdAndProductIdIn(Long orderId, @Param("productIds") List<Long> productIds);
 
+    @Query("SELECT * FROM order_product WHERE order_id = :orderId")
+    Flux<OrderProduct> findAllByOrderId(Long orderId);
+
     @Query("SELECT * FROM order_product WHERE order_id = :orderId AND product_id = :productId")
     Mono<OrderProduct> findByOrderIdAndProductId(Long orderId, Long productId);
 }
