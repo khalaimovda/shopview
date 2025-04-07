@@ -108,14 +108,43 @@ document.addEventListener('DOMContentLoaded', () => {
   function placeOrder() {
     fetch('/cart/checkout', { method: 'POST' })
       .then(response => {
-        if (!response.ok) {
-          throw new Error(`Error placing order: ${response.statusText}`);
+        if (response.ok) {
+          alert('Заказ успешно оформлен!');
+          window.location.href = "/orders";
+          return;
         }
-        alert('Заказ успешно оформлен!');
-        window.location.href = "/orders";
+
+        if (response.status === 400) {
+          return response.json().then(errorData => {
+            throw { status: response.status, errorData };
+          });
+        }
+
+        if (response.status === 500) {
+          return response.text().then(errorText => {
+            throw { status: response.status, errorText };
+          });
+        }
+
+        throw { status: response.status, message: response.statusText };
       })
       .catch(error => {
         console.error('Error:', error);
+
+        if (error.status === 400 &&
+            error.errorData &&
+            error.errorData.error === "Not enough funds to complete transaction") {
+          alert('Недостаточно средств для оплаты заказа');
+          return;
+        }
+
+        if (error.status === 500 &&
+            error.errorText &&
+            error.errorText.includes("Payment service request problems")) {
+          alert('Платежный сервис временно недоступен');
+          return;
+        }
+
         alert('Ошибка при оформлении заказа!');
       });
   }
