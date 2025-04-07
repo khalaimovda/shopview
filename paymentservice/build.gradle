@@ -7,9 +7,9 @@ openApiGenerate {
 	inputSpec.set("$projectDir/src/main/resources/openapi/api-spec.yaml")
 	outputDir.set("$projectDir/build/generated")
 	ignoreFileOverride.set("$projectDir/src/main/resources/openapi/.openapi-generator-java-sources.ignore")
-	modelPackage.set("com.github.khalaimovda.paymentservice.domain")
-	invokerPackage.set("com.github.khalaimovda.paymentservice")
-	apiPackage.set("com.github.khalaimovda.paymentservice.api")
+	modelPackage.set("com.github.khalaimovda.shopview.paymentservice.domain")
+	invokerPackage.set("com.github.khalaimovda.shopview.paymentservice")
+	apiPackage.set("com.github.khalaimovda.shopview.paymentservice.api")
 	configOptions.set([
 			hideGenerationTimestamp: "true",
 			requestMappingMode: "controller",

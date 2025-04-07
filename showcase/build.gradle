@@ -13,37 +13,13 @@ dependencies {
 }
 
 openApiGenerate {
-	generatorName.set("spring")
-	inputSpec.set("$projectDir/src/main/resources/openapi/api-spec.yaml")
-	outputDir.set("$projectDir/build/generated")
-	ignoreFileOverride.set("$projectDir/src/main/resources/openapi/.openapi-generator-java-sources.ignore")
-	modelPackage.set("com.github.khalaimovda.paymentservice.domain")
-	invokerPackage.set("com.github.khalaimovda.paymentservice")
-	apiPackage.set("com.github.khalaimovda.paymentservice.api")
-	configOptions.set([
-			hideGenerationTimestamp: "true",
-			requestMappingMode: "controller",
-			interfaceOnly: "false",
-			library: "spring-boot",
-			reactive: "true",
-			useSpringBoot3: "true",
-			useJakartaEe: "true",
-			useTags: "true",
-			dateLibrary: "java8",
-			openApiNullable: "false",
-			serializableModel: "true",
-			returnSuccessCode: "true"
-	])
-}
-
-openApiGenerate {
 	generatorName.set("java")
 	inputSpec.set("$rootDir/paymentservice/src/main/resources/openapi/api-spec.yaml")
 	outputDir.set("$projectDir/build/generated")
 	ignoreFileOverride.set("$rootDir/paymentservice/src/main/resources/openapi/.openapi-generator-java-sources.ignore")
-	modelPackage.set("com.github.khalaimovda.showcase.domain")
-	invokerPackage.set("com.github.khalaimovda.showcase")
-	apiPackage.set("com.github.khalaimovda.showcase.api")
+	modelPackage.set("com.github.khalaimovda.shopview.showcase.domain")
+	invokerPackage.set("com.github.khalaimovda.shopview.showcase")
+	apiPackage.set("com.github.khalaimovda.shopview.showcase.api")
 	configOptions.set([
 			hideGenerationTimestamp: "true",
 			library                : "webclient",
