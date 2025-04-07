@@ -1,0 +1,36 @@
+dependencies {
+	implementation 'org.springdoc:springdoc-openapi-starter-webflux-ui:2.1.0'
+}
+
+openApiGenerate {
+	generatorName.set("spring")
+	inputSpec.set("$projectDir/src/main/resources/openapi/api-spec.yaml")
+	outputDir.set("$projectDir/build/generated")
+	ignoreFileOverride.set("$projectDir/src/main/resources/openapi/.openapi-generator-java-sources.ignore")
+	modelPackage.set("com.github.khalaimovda.paymentservice.domain")
+	invokerPackage.set("com.github.khalaimovda.paymentservice")
+	apiPackage.set("com.github.khalaimovda.paymentservice.api")
+	configOptions.set([
+			hideGenerationTimestamp: "true",
+			requestMappingMode: "controller",
+			interfaceOnly: "false", // "true": When your own controller is ready (then you will need Main class too)
+			library: "spring-boot",
+			reactive: "true",
+			useSpringBoot3: "true",
+			useJakartaEe: "true",
+			useTags: "true",
+			dateLibrary: "java8",
+			openApiNullable: "false",
+			serializableModel: "true",
+			returnSuccessCode: "true"
+	])
+}
+
+//sourceSets.main.java.srcDir "$projectDir/build/generated/src/main/java" // Use generated classed
+sourceSets {
+	main {
+		java {
+			srcDir "${projectDir}/build/generated/src/main/java"
+		}
+	}
+}
