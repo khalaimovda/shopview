@@ -95,6 +95,9 @@ public class CartServiceImpl implements CartService {
             .then();
     }
 
+    // todo: В данном случае транзакция не сработает, так как мы вызываем не прокси объект, а метод
+    // из того же сервиса
+    // метод должен быть публичный и вызываться со стороны, чтобы подключилось прокси
     @Transactional
     private Mono<Order> getOrCreateActiveOrder() {
         return orderRepository

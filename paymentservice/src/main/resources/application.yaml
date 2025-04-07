@@ -1,0 +1,52 @@
+server:
+  port: 8081
+logging:
+  level:
+    io.r2dbc.postgresql.QUERY: DEBUG
+    io.r2dbc.postgresql.PARAM: DEBUG
+
+springdoc:
+  swagger-ui:
+    enabled: true
+#    path: /swagger-ui-custom.html
+#    tryItOutEnabled: true # Флаг включения возможности отправлять запросы из браузера
+#  # Флаг включения сохранения авторизации
+#  # Если включить, при перезагрузке или закрытии страницы данные авторизации не потеряются
+#    persistAuthorization: true
+
+spring:
+  application:
+    name: paymentservice
+  r2dbc:
+    url: r2dbc:postgresql://localhost:5432/shop
+    username: username
+    password: password
+    pool:
+      enabled: true
+      initial-size: 5
+      max-size: 15
+      max-idle-time: 30s
+      max-life-time: 10m
+      validation-query: SELECT 1
+
+#  servlet:
+#    multipart:
+#      max-file-size: 5MB
+#      max-request-size: 10MB
+#  hikari:
+#    transaction-isolation: 2
+#  liquibase:
+#    enabled: true
+#    change-log: "classpath:/db/changelog/db.changelog-master.xml"
+#    url: jdbc:postgresql://localhost:5432/shop
+#    user: username
+#    password: password
+#  cache:
+#    type: caffeine
+#    cache-names: orders,products
+#    caffeine:
+#      spec: maximumSize=1000,expireAfterWrite=30m
+#app:
+#  images:
+#    upload-dir: uploads/images
+#    base-url: /images/
