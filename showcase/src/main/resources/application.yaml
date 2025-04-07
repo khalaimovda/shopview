@@ -37,3 +37,5 @@ app:
   images:
     upload-dir: uploads/images
     base-url: /images/
+  payment-service:
+    url: http://localhost:8081/v1

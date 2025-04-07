@@ -25,6 +25,7 @@ public class CartServiceImpl implements CartService {
     private final ProductRepository productRepository;
     private final OrderProductService orderProductService;
     private final OrderService orderService;
+    private final PaymentService paymentService;
 
     @Override
     @Transactional
@@ -82,10 +83,13 @@ public class CartServiceImpl implements CartService {
             .flatMap(cart -> orderService
                 .getOrderDetail(cart.getId())
                 .flatMap(orderDetail -> {
-                    if (orderDetail.getTotalPrice().compareTo(BigDecimal.ZERO) == 0) {
+                    BigDecimal totalPrice = orderDetail.getTotalPrice();
+                    if (totalPrice.compareTo(BigDecimal.ZERO) == 0) {
                         return Mono.error(new IllegalStateException("Cart is empty"));
                     }
-                    return Mono.just(cart);
+                    return paymentService
+                        .makePayment(totalPrice)
+                        .then(Mono.just(cart));
                 })
             )
             .flatMap(cart -> {
@@ -95,9 +99,6 @@ public class CartServiceImpl implements CartService {
             .then();
     }
 
-    // todo: В данном случае транзакция не сработает, так как мы вызываем не прокси объект, а метод
-    // из того же сервиса
-    // метод должен быть публичный и вызываться со стороны, чтобы подключилось прокси
     @Transactional
     private Mono<Order> getOrCreateActiveOrder() {
         return orderRepository

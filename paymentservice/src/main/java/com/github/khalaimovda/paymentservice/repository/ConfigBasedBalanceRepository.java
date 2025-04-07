@@ -31,8 +31,6 @@ public class ConfigBasedBalanceRepository implements BalanceRepository {
     }
 
     private Balance createBalanceObj() {
-        Balance balance = new Balance();
-        balance.setBalance(this.balance);
-        return balance;
+        return new Balance().balance(this.balance);
     }
 }

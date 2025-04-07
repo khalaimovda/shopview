@@ -8,4 +8,4 @@ spring:
     name: paymentservice
 app:
   balance:
-    amount: 1500.00
+    amount: 300.00
