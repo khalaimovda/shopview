@@ -33,32 +33,20 @@ subprojects {
 	}
 
 	dependencies {
-		implementation 'org.springframework.boot:spring-boot-starter-data-r2dbc'
 		implementation 'org.springframework.boot:spring-boot-starter-webflux'
 		implementation 'org.springframework.boot:spring-boot-starter-json'
 		implementation 'org.springframework.boot:spring-boot-starter-validation'
-		implementation 'org.liquibase:liquibase-core'
 		implementation 'jakarta.validation:jakarta.validation-api'
 		implementation 'org.mapstruct:mapstruct:1.6.3'
 		implementation 'io.swagger.core.v3:swagger-annotations:2.2.29' // Required for openapi auto generated classes
 		compileOnly 'org.projectlombok:lombok'
-		runtimeOnly 'org.postgresql:r2dbc-postgresql:1.0.7.RELEASE'
-		runtimeOnly 'org.postgresql:postgresql' // Required for liquibase
 		annotationProcessor 'org.projectlombok:lombok'
 		annotationProcessor 'org.mapstruct:mapstruct-processor:1.6.3'
 		testImplementation 'org.springframework.boot:spring-boot-starter-test'
-		testImplementation 'org.springframework.boot:spring-boot-testcontainers'
 		testImplementation 'org.testcontainers:junit-jupiter'
-		testImplementation 'org.testcontainers:postgresql'
-		testImplementation 'org.testcontainers:r2dbc'
 		testImplementation 'io.projectreactor:reactor-test'
 		testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 	}
-
-//	tasks.named('compileJava') {
-//		// dependsOn([tasks.openApiGenerate, tasks.buildClient]) - вот так, если нужно опираться на обе задачи
-//		dependsOn(tasks.openApiGenerate)
-//	}
 
 	tasks.named('test') {
 		useJUnitPlatform()

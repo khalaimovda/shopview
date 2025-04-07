@@ -42,40 +42,55 @@ components:
   schemas:
     Balance:
       type: object
+      required:
+        - balance
       properties:
         balance:
           type: number
-          format: double
+          format: decimal
+          x-java-type: java.math.BigDecimal
           example: 128.83
 
     PaymentRequest:
       type: object
+      required:
+        - amount
       properties:
         amount:
           type: number
-          format: double
+          format: decimal
+          x-java-type: java.math.BigDecimal
           example: 44.15
 
     PaymentSuccessResponse:
       type: object
+      required:
+        - balance
       properties:
         balance:
           type: number
-          format: double
+          format: decimal
+          x-java-type: java.math.BigDecimal
           description: Remaining balance after payment
           example: 132.45
 
     InsufficientFundsError:
       type: object
+      required:
+        - error
+        - requiredAmount
+        - availableBalance
       properties:
         error:
           type: string
           example: Insufficient funds
         requiredAmount:
           type: number
-          format: double
+          format: decimal
+          x-java-type: java.math.BigDecimal
           example: 224.81
         availableBalance:
           type: number
-          format: double
+          format: decimal
+          x-java-type: java.math.BigDecimal
           example: 150.00

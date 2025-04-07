@@ -1,5 +1,5 @@
 dependencies {
-	implementation 'org.springdoc:springdoc-openapi-starter-webflux-ui:2.1.0'
+	implementation 'org.springdoc:springdoc-openapi-starter-webflux-ui:2.7.0'
 }
 
 openApiGenerate {
@@ -13,7 +13,7 @@ openApiGenerate {
 	configOptions.set([
 			hideGenerationTimestamp: "true",
 			requestMappingMode: "controller",
-			interfaceOnly: "false", // "true": When your own controller is ready (then you will need Main class too)
+			interfaceOnly: "true",
 			library: "spring-boot",
 			reactive: "true",
 			useSpringBoot3: "true",
@@ -26,11 +26,8 @@ openApiGenerate {
 	])
 }
 
-//sourceSets.main.java.srcDir "$projectDir/build/generated/src/main/java" // Use generated classed
-sourceSets {
-	main {
-		java {
-			srcDir "${projectDir}/build/generated/src/main/java"
-		}
-	}
+sourceSets.main.java.srcDir "$projectDir/build/generated/src/main/java" // Use generated classed
+
+tasks.named('compileJava') {
+	dependsOn(tasks.openApiGenerate)
 }

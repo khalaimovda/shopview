@@ -1,8 +1,15 @@
 dependencies {
+	implementation 'org.springframework.boot:spring-boot-starter-data-r2dbc'
 	implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
 	implementation 'org.springframework.boot:spring-boot-starter-cache'
 	implementation 'org.hibernate.validator:hibernate-validator:8.0.1.Final'
 	implementation 'com.github.ben-manes.caffeine:caffeine'
+	implementation 'org.liquibase:liquibase-core'
+	runtimeOnly 'org.postgresql:r2dbc-postgresql:1.0.7.RELEASE'
+	runtimeOnly 'org.postgresql:postgresql' // Required for liquibase
+	testImplementation 'org.springframework.boot:spring-boot-testcontainers'
+	testImplementation 'org.testcontainers:postgresql'
+	testImplementation 'org.testcontainers:r2dbc'
 }
 
 openApiGenerate {
@@ -16,7 +23,7 @@ openApiGenerate {
 	configOptions.set([
 			hideGenerationTimestamp: "true",
 			requestMappingMode: "controller",
-			interfaceOnly: "false", // "true": When your own controller is ready (then you will need Main class too)
+			interfaceOnly: "false",
 			library: "spring-boot",
 			reactive: "true",
 			useSpringBoot3: "true",
@@ -47,10 +54,8 @@ openApiGenerate {
 	])
 }
 
-sourceSets {
-	main {
-		java {
-			srcDir "${projectDir}/build/generated/src/main/java" // Use generated classed
-		}
-	}
+sourceSets.main.java.srcDir "$projectDir/build/generated/src/main/java" // Use generated classed
+
+tasks.named('compileJava') {
+	dependsOn(tasks.openApiGenerate)
 }
