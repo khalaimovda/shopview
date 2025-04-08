@@ -28,11 +28,13 @@ spring:
     url: jdbc:postgresql://localhost:5432/shop
     user: username
     password: password
+  data:
+    redis:
+      host: 127.0.0.1
+      port: 6379
   cache:
-    type: caffeine
-    cache-names: orders,products
-    caffeine:
-      spec: maximumSize=1000,expireAfterWrite=30m
+    redis:
+      time-to-live: PT1M
 app:
   images:
     upload-dir: uploads/images

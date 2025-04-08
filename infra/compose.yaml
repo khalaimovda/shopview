@@ -11,5 +11,11 @@ services:
     volumes:
       - db-data:/var/lib/postgresql/data
 
+  cache:
+    image: redis:7.4.2
+    restart: always
+    ports:
+      - "6379:6379"
+
 volumes:
   db-data:

@@ -28,7 +28,7 @@ public class PaymentServiceImpl implements PaymentService {
             .apiBalanceGet()
             .onErrorResume(
                 WebClientResponseException.class,
-                ex -> Mono.error(new PaymentServiceException(ex.getStatusCode(), ex.getMessage()))); // todo: Обработка ошибок
+                ex -> Mono.error(new PaymentServiceException(ex.getStatusCode(), ex.getMessage())));
     }
 
     @Override

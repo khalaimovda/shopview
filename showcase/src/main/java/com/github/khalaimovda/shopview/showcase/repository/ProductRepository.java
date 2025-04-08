@@ -17,7 +17,7 @@ public interface ProductRepository extends ReactiveCrudRepository<Product, Long>
           (COALESCE(:description, '') = '' OR LOWER(description) LIKE LOWER(CONCAT('%', :description, '%')))
         ;
     """)
-    Mono<Long> countByNameOrDescriptionContaining(String name, String description);
+    Mono<Integer> countByNameOrDescriptionContaining(String name, String description);
 
     @Query("""
         SELECT * FROM products

@@ -20,7 +20,7 @@ public class OrderServiceImpl implements OrderService {
     private final OrderMapper orderMapper;
 
     @Override
-    @Cacheable(value = "orders")
+    @Cacheable(value = "orders", key = "'all'")
     public Flux<OrderListItem> getAllOrders() {
         return orderRepository
             .findAllPlacedOrdersWithProducts()

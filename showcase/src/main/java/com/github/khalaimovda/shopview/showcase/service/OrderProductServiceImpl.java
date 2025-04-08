@@ -4,6 +4,7 @@ import com.github.khalaimovda.shopview.showcase.model.OrderProduct;
 import com.github.khalaimovda.shopview.showcase.repository.OrderProductRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.cache.annotation.Caching;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -20,6 +21,10 @@ public class OrderProductServiceImpl implements OrderProductService {
     private final OrderProductRepository orderProductRepository;
 
     @Override
+    @Cacheable(
+        value = "products",
+        key = "'countMap' + ':' + #orderId + ':' + #productIds.hashCode()"
+    )
     public Mono<Map<Long, Integer>> getProductIdCountMap(Long orderId, List<Long> productIds) {
         return orderProductRepository
             .findAllByOrderIdAndProductIdIn(orderId, productIds)
