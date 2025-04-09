@@ -1,17 +1,29 @@
 package com.github.khalaimovda.shopview.showcase.integration;
 
+import com.github.khalaimovda.shopview.showcase.domain.Balance;
+import com.github.khalaimovda.shopview.showcase.dto.OrderWithProducts;
+import com.github.khalaimovda.shopview.showcase.exception.InsufficientFundsException;
 import com.github.khalaimovda.shopview.showcase.model.Order;
 import com.github.khalaimovda.shopview.showcase.model.OrderProduct;
 import com.github.khalaimovda.shopview.showcase.model.Product;
 import com.github.khalaimovda.shopview.showcase.repository.OrderProductRepository;
 import com.github.khalaimovda.shopview.showcase.repository.OrderRepository;
 import com.github.khalaimovda.shopview.showcase.repository.ProductRepository;
+import com.github.khalaimovda.shopview.showcase.service.PaymentService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
+import java.math.BigDecimal;
+
+import static com.github.khalaimovda.shopview.showcase.utils.OrderUtils.calculateOrderPrice;
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.*;
 
 
 public class CartControllerIntegrationTest extends AbstractIntegrationTest {
@@ -24,6 +36,9 @@ public class CartControllerIntegrationTest extends AbstractIntegrationTest {
 
     @Autowired
     private ProductRepository productRepository;
+
+    @MockitoBean
+    private PaymentService paymentService;
 
     @Test
     void testGetCart() throws Exception {
@@ -157,13 +172,45 @@ public class CartControllerIntegrationTest extends AbstractIntegrationTest {
     void testCheckout() throws Exception {
         Order cart = orderRepository.findByIsActiveTrue().block();
         long orderId = cart.getId();
+        OrderWithProducts orderWithProducts = orderRepository.findOrderWithProductsById(orderId).block();
+        BigDecimal totalPrice = calculateOrderPrice(orderWithProducts);
+
+        when(paymentService.makePayment(any(BigDecimal.class)))
+            .thenReturn(Mono.just(new Balance().balance(BigDecimal.TWO)));
 
         webTestClient.post()
             .uri("/cart/checkout")
             .exchange()
             .expectStatus().isOk();
 
+        verify(paymentService, times(1)).makePayment(totalPrice);
+
         Order order = orderRepository.findById(orderId).block();
         assertFalse(order.getIsActive());
+    }
+
+    @Test
+    void testCheckoutInsufficientFunds() throws Exception {
+        Order cart = orderRepository.findByIsActiveTrue().block();
+        long orderId = cart.getId();
+        OrderWithProducts orderWithProducts = orderRepository.findOrderWithProductsById(orderId).block();
+        BigDecimal totalPrice = calculateOrderPrice(orderWithProducts);
+        BigDecimal availableBalance = totalPrice.subtract(BigDecimal.ONE);
+
+        when(paymentService.makePayment(any(BigDecimal.class)))
+            .thenReturn(Mono.just(new Balance().balance(BigDecimal.TWO)));
+
+        when(paymentService.makePayment(any(BigDecimal.class))).thenReturn(Mono.error(new InsufficientFundsException(
+            HttpStatus.BAD_REQUEST, "Not enough funds to complete transaction", totalPrice, availableBalance)));
+
+        webTestClient.post()
+            .uri("/cart/checkout")
+            .exchange()
+            .expectStatus().isBadRequest();
+
+        verify(paymentService, times(1)).makePayment(totalPrice);
+
+        Order order = orderRepository.findById(orderId).block();
+        assertTrue(order.getIsActive());
     }
 }

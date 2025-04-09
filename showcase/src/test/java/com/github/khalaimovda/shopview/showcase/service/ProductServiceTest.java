@@ -16,11 +16,9 @@ import org.mapstruct.factory.Mappers;
 import org.mockito.*;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.codec.multipart.FilePart;
-import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
@@ -58,7 +56,7 @@ class ProductServiceTest {
     private ImageService imageService;
 
     @Mock
-    private OrderProductService orderProductService;
+    private ProductCacheService productCacheService;
 
     @Mock
     FilePart imageFile;
@@ -71,12 +69,6 @@ class ProductServiceTest {
 
     @Captor
     private ArgumentCaptor<Product> productCaptor;
-
-    @Captor
-    private ArgumentCaptor<List<Long>> productIdsCaptor;
-
-    @Captor
-    private ArgumentCaptor<Pageable> pageableCaptor;
 
     @Test
     void testCreateProduct() {
@@ -114,33 +106,13 @@ class ProductServiceTest {
     void testGetAllProducts() {
         // Arrange
         String contentSubstring = "Test search";
-        long totalElements = 15L;
+        int totalElements = 15;
         String imageServicePostfix = "/path";
 
         Pageable pageable = PageRequest.of(0, 3);
         List<Product> products = generateRandomProducts(3);
-        Page<Product> page =  new PageImpl<>(products, pageable, totalElements);
-
-        when(productRepository.countByNameOrDescriptionContaining(anyString(), anyString()))
-            .thenReturn(Mono.just(totalElements));
-
-        when(productRepository.findByNameOrDescriptionContaining(anyString(), anyString(), anyInt(), anyLong()))
-            .thenReturn(Flux.just(products.toArray(new Product[0])));
-
-        Order activeOrder = generateRandomActiveOrder();
-        when(orderRepository.findByIsActiveTrue())
-            .thenReturn(Mono.just(activeOrder));
-
         Integer firstProductCount = 4;
         Map<Long, Integer> productIdCountMap = Map.of(products.getFirst().getId(), firstProductCount);
-        when(orderProductService.getProductIdCountMap(anyLong(), anyList()))
-            .thenReturn(Mono.just(productIdCountMap));
-
-        when(imageService.getImageSrcPath(anyString())).thenAnswer(invocation -> {
-            String imagePath = invocation.getArgument(0);
-            return imagePath + imageServicePostfix;
-        });
-
         List<ProductListItem> expectedResultProducts = products.stream().map(
             product -> productMapper.toProductListItem(
                 product,
@@ -148,6 +120,12 @@ class ProductServiceTest {
                 productIdCountMap.getOrDefault(product.getId(), 0)
             )
         ).toList();
+
+        when(productCacheService.countProducts(anyString(), anyString()))
+            .thenReturn(Mono.just(totalElements));
+
+        when(productCacheService.getProductItems(anyString(), anyString(), anyInt(), anyLong()))
+            .thenReturn(Mono.just(expectedResultProducts));
 
 
         // Act
@@ -164,20 +142,11 @@ class ProductServiceTest {
             ))
             .verifyComplete();
 
-        verify(productRepository, times(1))
-            .countByNameOrDescriptionContaining(eq(contentSubstring), eq(contentSubstring));
+        verify(productCacheService, times(1))
+            .countProducts(eq(contentSubstring), eq(contentSubstring));
 
-        verify(productRepository, times(1))
-            .findByNameOrDescriptionContaining(eq(contentSubstring), eq(contentSubstring), eq(pageable.getPageSize()), eq(pageable.getOffset()));
-
-        verify(orderRepository, times(1))
-            .findByIsActiveTrue();
-
-        verify(orderProductService, times(1))
-            .getProductIdCountMap(eq(activeOrder.getId()), productIdsCaptor.capture());
-        assertEquals(products.stream().map(Product::getId).toList(), productIdsCaptor.getValue());
-
-        verify(imageService, times(3)).getImageSrcPath(anyString());
+        verify(productCacheService, times(1))
+            .getProductItems(eq(contentSubstring), eq(contentSubstring), eq(pageable.getPageSize()), eq(pageable.getOffset()));
     }
 
     @Test

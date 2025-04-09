@@ -1,7 +1,9 @@
 package com.github.khalaimovda.shopview.showcase.service;
 
+import com.github.khalaimovda.shopview.showcase.domain.Balance;
 import com.github.khalaimovda.shopview.showcase.dto.OrderDetail;
 import com.github.khalaimovda.shopview.showcase.dto.OrderWithProducts;
+import com.github.khalaimovda.shopview.showcase.exception.InsufficientFundsException;
 import com.github.khalaimovda.shopview.showcase.model.Order;
 import com.github.khalaimovda.shopview.showcase.model.Product;
 import com.github.khalaimovda.shopview.showcase.repository.OrderRepository;
@@ -13,9 +15,11 @@ import org.mockito.Captor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.HttpStatus;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.NoSuchElementException;
 
@@ -40,11 +44,11 @@ public class CartServiceTest {
     @Mock
     private OrderService orderService;
 
+    @Mock
+    private PaymentService paymentService;
+
     @InjectMocks
     private CartServiceImpl cartService;
-
-    @Captor
-    private ArgumentCaptor<Product> productCaptor;
 
     @Captor
     private ArgumentCaptor<Order> orderCaptor;
@@ -277,12 +281,15 @@ public class CartServiceTest {
     void testCheckoutCart() {
         // Arrange
         OrderWithProducts orderWithProducts = generateRandomOrderWithProducts();
+        BigDecimal totalPrice = calculateOrderPrice(orderWithProducts);
         OrderDetail orderDetail = getOrderDetail(orderWithProducts);
         Order cart = generateRandomActiveOrder();
         cart.setId(orderWithProducts.getId());
 
         when(orderRepository.findByIsActiveTrue()).thenReturn(Mono.just(cart));
         when(orderService.getOrderDetail(cart.getId())).thenReturn(Mono.just(orderDetail));
+        when(paymentService.makePayment(any(BigDecimal.class)))
+            .thenReturn(Mono.just(new Balance().balance(BigDecimal.TWO)));
         when(orderRepository.save(any(Order.class))).thenReturn(Mono.just(new Order()));
 
         // Act
@@ -293,9 +300,38 @@ public class CartServiceTest {
         // Assert
         verify(orderRepository, times(1)).findByIsActiveTrue();
         verify(orderService, times(1)).getOrderDetail(cart.getId());
+        verify(paymentService, times(1)).makePayment(totalPrice);
         verify(orderRepository, times(1)).save(orderCaptor.capture());
 
         cart.setIsActive(false);
         assertEquals(cart, orderCaptor.getValue());
+    }
+
+    @Test
+    void testCheckoutCartInsufficientFunds() {
+        // Arrange
+        OrderWithProducts orderWithProducts = generateRandomOrderWithProducts();
+        BigDecimal totalPrice = calculateOrderPrice(orderWithProducts);
+        BigDecimal availableBalance = totalPrice.subtract(BigDecimal.ONE);
+        OrderDetail orderDetail = getOrderDetail(orderWithProducts);
+        Order cart = generateRandomActiveOrder();
+        cart.setId(orderWithProducts.getId());
+
+        when(orderRepository.findByIsActiveTrue()).thenReturn(Mono.just(cart));
+        when(orderService.getOrderDetail(cart.getId())).thenReturn(Mono.just(orderDetail));
+        when(paymentService.makePayment(any(BigDecimal.class))).thenReturn(Mono.error(new InsufficientFundsException(
+                HttpStatus.BAD_REQUEST, "Not enough funds to complete transaction", totalPrice, availableBalance)));
+
+        // Act
+        StepVerifier
+            .create(cartService.checkout())
+            .expectError(InsufficientFundsException.class)
+            .verify();
+
+        // Assert
+        verify(orderRepository, times(1)).findByIsActiveTrue();
+        verify(orderService, times(1)).getOrderDetail(cart.getId());
+        verify(paymentService, times(1)).makePayment(totalPrice);
+        verify(orderRepository, never()).save(any(Order.class));
     }
 }

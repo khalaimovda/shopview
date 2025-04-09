@@ -4,14 +4,14 @@ package com.github.khalaimovda.shopview.showcase.controller;
 import com.github.khalaimovda.shopview.showcase.dto.OrderDetail;
 import com.github.khalaimovda.shopview.showcase.dto.OrderListItem;
 import com.github.khalaimovda.shopview.showcase.dto.OrderWithProducts;
-import com.github.khalaimovda.shopview.showcase.mapper.OrderMapper;
+import com.github.khalaimovda.shopview.showcase.mapper.PaymentMapperImpl;
 import com.github.khalaimovda.shopview.showcase.model.Order;
 import com.github.khalaimovda.shopview.showcase.model.Product;
 import com.github.khalaimovda.shopview.showcase.service.OrderService;
 import org.junit.jupiter.api.Test;
-import org.mapstruct.factory.Mappers;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.reactive.WebFluxTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.reactive.server.WebTestClient;
@@ -28,6 +28,7 @@ import static org.mockito.Mockito.*;
 
 
 @WebFluxTest(OrderController.class)
+@Import({PaymentMapperImpl.class})
 public class OrderControllerTest {
 
     @Autowired
@@ -35,8 +36,6 @@ public class OrderControllerTest {
 
     @MockitoBean
     private OrderService orderService;
-
-    private final OrderMapper orderMapper = Mappers.getMapper(OrderMapper.class);
 
     @Test
     void testGetAllOrders() throws Exception {

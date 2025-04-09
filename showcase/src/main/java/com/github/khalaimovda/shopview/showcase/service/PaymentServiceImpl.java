@@ -27,6 +27,13 @@ public class PaymentServiceImpl implements PaymentService {
         return api
             .apiBalanceGet()
             .onErrorResume(
+                WebClientRequestException.class,
+                ex -> Mono.error(new PaymentServiceException(
+                    HttpStatus.INTERNAL_SERVER_ERROR,
+                    "Payment service request problems: " + ex.getMessage())
+                )
+            )
+            .onErrorResume(
                 WebClientResponseException.class,
                 ex -> Mono.error(new PaymentServiceException(ex.getStatusCode(), ex.getMessage())));
     }

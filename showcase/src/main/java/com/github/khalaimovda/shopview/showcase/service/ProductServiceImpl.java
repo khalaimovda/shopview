@@ -30,7 +30,6 @@ public class ProductServiceImpl implements ProductService {
     private final OrderProductRepository orderProductRepository;
     private final ProductMapper productMapper;
     private final ImageService imageService;
-    private final OrderProductService orderProductService;
     private final ProductCacheService productCacheService;
 
     @Override

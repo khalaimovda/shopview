@@ -4,6 +4,7 @@ package com.github.khalaimovda.shopview.showcase.controller;
 import com.github.khalaimovda.shopview.showcase.dto.ProductCreateForm;
 import com.github.khalaimovda.shopview.showcase.dto.ProductDetail;
 import com.github.khalaimovda.shopview.showcase.dto.ProductListItem;
+import com.github.khalaimovda.shopview.showcase.mapper.PaymentMapperImpl;
 import com.github.khalaimovda.shopview.showcase.mapper.ProductMapper;
 import com.github.khalaimovda.shopview.showcase.service.ProductService;
 import org.junit.jupiter.api.Test;
@@ -12,6 +13,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.reactive.WebFluxTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
@@ -36,6 +38,7 @@ import static org.mockito.Mockito.*;
 
 
 @WebFluxTest(ProductController.class)
+@Import({PaymentMapperImpl.class})
 public class ProductControllerTest {
 
     @Autowired
