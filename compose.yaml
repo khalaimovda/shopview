@@ -11,20 +11,42 @@ services:
     volumes:
       - db-data:/var/lib/postgresql/data
 
-  shopview:
-    build: .
+  cache:
+    image: redis:7.4.2
+    restart: always
+    ports:
+      - "6379:6379"
+
+  showcase:
+    build:
+      context: .
+      dockerfile: ./showcase/Dockerfile
     depends_on:
       - db
+      - cache
     environment:
       SPRING_R2DBC_URL: r2dbc:postgresql://db:5432/shop
       SPRING_R2DBC_USERNAME: username
       SPRING_R2DBC_PASSWORD: password
-      APP_IMAGES_UPLOAD_DIR: /tmp/uploads/images
       SPRING_LIQUIBASE_URL: jdbc:postgresql://db:5432/shop
       SPRING_LIQUIBASE_USER: username
       SPRING_LIQUIBASE_PASSWORD: password
+      SPRING_DATA_REDIS_HOST: cache
+      SPRING_DATA_REDIS_PORT: 6379
+      APP_IMAGES_UPLOAD_DIR: /tmp/uploads/images
+      APP_PAYMENT_SERVICE_URL: http://paymentservice:8081/v1
     ports:
-      - 8080:8080
+      - "8080:8080"
+
+  paymentservice:
+    build:
+      context: .
+      dockerfile: ./paymentservice/Dockerfile
+    environment:
+      SERVER_PORT: 8081
+      APP_BALANCE_AMOUNT: 300.00
+    ports:
+      - "8081:8081"
 
   db-init:
     image: postgres:17.4

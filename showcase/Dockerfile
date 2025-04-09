@@ -1,11 +1,15 @@
 FROM gradle:8.13.0-jdk21 AS builder
 WORKDIR /app
-COPY . .
-RUN gradle build -x test
+COPY settings.gradle settings.gradle
+COPY build.gradle build.gradle
+COPY showcase ./showcase
+COPY paymentservice/src/main/resources/openapi/.openapi-generator-java-sources.ignore ./paymentservice/src/main/resources/openapi/.openapi-generator-java-sources.ignore
+COPY paymentservice/src/main/resources/openapi/api-spec.yaml ./paymentservice/src/main/resources/openapi/api-spec.yaml
+RUN gradle showcase:build -x test
 
 FROM openjdk:21-jdk
 WORKDIR /app
-COPY --from=builder /app/build/libs/shopview-0.0.1-SNAPSHOT.jar app.jar
+COPY --from=builder /app/showcase/build/libs/showcase-0.0.1-SNAPSHOT.jar app.jar
 
 # Copy images for test data. Comment it it is not necessary
 #############################################################

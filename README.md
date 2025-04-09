@@ -17,6 +17,10 @@ The application allows users to:
 - Add or remove products from the cart and adjust their quantities
 - Place an order (checkout)
 
+There are two projects:
+- Main project with products, car and orders
+- Additional project for making payments
+
 
 ## Get started
 
@@ -30,4 +34,5 @@ docker compose up -d --build
 docker-compose run --rm db-init
 ```
 
-Main page with product catalog will be available at `http://127.0.0.1:8080/products`
+- Main page with product catalog will be available at `http://127.0.0.1:8080/products`
+- Swagger for payment service API will be available at: `http://127.0.0.1:8081/swagger-ui.html`
