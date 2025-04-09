@@ -1,10 +1,12 @@
 package com.github.khalaimovda.shopview.showcase.integration;
 
+import com.redis.testcontainers.RedisContainer;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebFlux;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.r2dbc.core.DatabaseClient;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
@@ -21,19 +23,25 @@ public abstract class AbstractIntegrationTest {
     static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>(
         DockerImageName.parse("postgres:17.4-alpine"));
 
+    static RedisContainer redis = new RedisContainer(
+        DockerImageName.parse("redis:7.4.2-alpine"));
+
     static {
         postgres.start();
+        redis.start();
     }
 
     @Autowired
     private DatabaseClient databaseClient;
 
     @Autowired
+    private RedisTemplate redisTemplate;
+
+    @Autowired
     protected WebTestClient webTestClient;
 
     @DynamicPropertySource
     static void configureDatasourceProperties(DynamicPropertyRegistry registry) {
-
         String r2dbcUrl = String.format("r2dbc:postgresql://%s:%d/%s",
             postgres.getHost(),
             postgres.getMappedPort(PostgreSQLContainer.POSTGRESQL_PORT),
@@ -46,6 +54,17 @@ public abstract class AbstractIntegrationTest {
         registry.add("spring.liquibase.url", postgres::getJdbcUrl);
         registry.add("spring.liquibase.user", postgres::getUsername);
         registry.add("spring.liquibase.password", postgres::getPassword);
+    }
+
+    @DynamicPropertySource
+    static void configureRedisProperties(DynamicPropertyRegistry registry) {
+        registry.add("spring.data.redis.host", redis::getHost);
+        registry.add("spring.data.redis.port", redis::getRedisPort);
+    }
+
+    @DynamicPropertySource
+    static void configureCacheProperties(DynamicPropertyRegistry registry) {
+        registry.add("spring.cache.redis.time-to-live", () -> "PT2S");
     }
 
     @BeforeEach
@@ -80,6 +99,11 @@ public abstract class AbstractIntegrationTest {
         executeScript(product_script).block();
         executeScript(order_script).block();
         executeScript(order_product_script).block();
+    }
+
+    @BeforeEach
+    public void cleanRedisCache() {
+        redisTemplate.getConnectionFactory().getConnection().serverCommands().flushAll();
     }
 
     @AfterEach

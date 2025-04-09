@@ -8,6 +8,7 @@ dependencies {
 	runtimeOnly 'org.postgresql:postgresql' // Required for liquibase
 	testImplementation 'org.springframework.boot:spring-boot-testcontainers'
 	testImplementation 'org.testcontainers:postgresql'
+	testImplementation 'com.redis:testcontainers-redis:2.2.2'
 	testImplementation 'org.testcontainers:r2dbc'
 }
 

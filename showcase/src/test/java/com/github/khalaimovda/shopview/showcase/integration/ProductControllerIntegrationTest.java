@@ -1,28 +1,36 @@
 package com.github.khalaimovda.shopview.showcase.integration;
 
 import com.github.khalaimovda.shopview.showcase.dto.ProductDetail;
+import com.github.khalaimovda.shopview.showcase.repository.OrderRepository;
 import com.github.khalaimovda.shopview.showcase.repository.ProductRepository;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.MediaType;
+import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 import org.springframework.web.reactive.function.BodyInserters;
 import reactor.test.StepVerifier;
 
 import java.math.BigDecimal;
+import java.util.concurrent.TimeUnit;
 
 import static com.github.khalaimovda.shopview.showcase.utils.ImageUtils.createRandomBytes;
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 
 
 public class ProductControllerIntegrationTest extends AbstractIntegrationTest {
 
-    @Autowired
+    @MockitoSpyBean
     private ProductRepository productRepository;
 
+    @MockitoSpyBean
+    private OrderRepository orderRepository;
+
     @Test
-    public void testGetAllProducts() throws Exception {
+    public void testGetAllProducts() {
         webTestClient.get()
             .uri(builder -> builder
                 .path("/products")
@@ -60,7 +68,48 @@ public class ProductControllerIntegrationTest extends AbstractIntegrationTest {
     }
 
     @Test
-    void testCreateProduct() throws Exception {
+    public void testGetAllProductsCached() throws InterruptedException {
+        for (int i = 0; i < 15; i++) {
+            webTestClient.get()
+                .uri(builder -> builder
+                    .path("/products")
+                    .queryParam("page", "0")
+                    .queryParam("size", "20")
+                    .queryParam("search", "searchValue")
+                    .build())
+                .exchange()
+                .expectStatus().isOk();
+        }
+
+        verify(productRepository, times(1))
+            .countByNameOrDescriptionContaining(eq("searchValue"), eq("searchValue"));
+        verify(productRepository, times(1))
+            .findByNameOrDescriptionContaining(eq("searchValue"), eq("searchValue"), eq(20), eq(0L));
+        verify(orderRepository, times(1)).findByIsActiveTrue();
+
+        // Wait until TTL is expired
+        TimeUnit.SECONDS.sleep(2L);
+
+        webTestClient.get()
+            .uri(builder -> builder
+                .path("/products")
+                .queryParam("page", "0")
+                .queryParam("size", "20")
+                .queryParam("search", "searchValue")
+                .build())
+            .exchange()
+            .expectStatus().isOk();
+
+        verify(productRepository, times(2))
+            .countByNameOrDescriptionContaining(eq("searchValue"), eq("searchValue"));
+        verify(productRepository, times(2))
+            .findByNameOrDescriptionContaining(eq("searchValue"), eq("searchValue"), eq(20), eq(0L));
+        verify(orderRepository, times(2)).findByIsActiveTrue();
+    }
+
+
+    @Test
+    void testCreateProduct() {
         String productName = "TestName";
         String productDescription = "TestDescription";
         String imageName = "test-create.jpg";
@@ -95,8 +144,69 @@ public class ProductControllerIntegrationTest extends AbstractIntegrationTest {
             .verifyComplete();
     }
 
+
     @Test
-    void testGetProductById() throws Exception {
+    void testCreateProductInvalidCache() {
+        String productName = "TestName";
+        String productDescription = "TestDescription";
+        String imageName = "test-create.jpg";
+        BigDecimal productPrice = new BigDecimal("82.13");
+
+        webTestClient.get()
+            .uri(builder -> builder
+                .path("/products")
+                .queryParam("page", "0")
+                .queryParam("size", "20")
+                .queryParam("search", "searchValue")
+                .build())
+            .exchange()
+            .expectStatus().isOk();
+
+        verify(productRepository, times(1))
+            .countByNameOrDescriptionContaining(eq("searchValue"), eq("searchValue"));
+        verify(productRepository, times(1))
+            .findByNameOrDescriptionContaining(eq("searchValue"), eq("searchValue"), eq(20), eq(0L));
+        verify(orderRepository, times(1)).findByIsActiveTrue();
+
+        // Create post
+        //////////////////////////////////////////////////////////////////////////////
+        webTestClient.post()
+            .uri("/products")
+            .contentType(MediaType.MULTIPART_FORM_DATA)
+            .body(BodyInserters.fromMultipartData("name", productName)
+                .with("description", productDescription)
+                .with("price", productPrice.toString())
+                .with("image", new HttpEntity<>(
+                    new ByteArrayResource(createRandomBytes()) {
+                        @Override
+                        public String getFilename() {
+                            return imageName;
+                        }
+                    })))
+            .exchange()
+            .expectStatus().isCreated();
+        // After post creation cache must be invalidated
+        //////////////////////////////////////////////////////////////////////////////
+
+        webTestClient.get()
+            .uri(builder -> builder
+                .path("/products")
+                .queryParam("page", "0")
+                .queryParam("size", "20")
+                .queryParam("search", "searchValue")
+                .build())
+            .exchange()
+            .expectStatus().isOk();
+
+        verify(productRepository, times(2))
+            .countByNameOrDescriptionContaining(eq("searchValue"), eq("searchValue"));
+        verify(productRepository, times(2))
+            .findByNameOrDescriptionContaining(eq("searchValue"), eq("searchValue"), eq(20), eq(0L));
+        verify(orderRepository, times(2)).findByIsActiveTrue();
+    }
+
+    @Test
+    void testGetProductById() {
         // Based on predefined sql
         ProductDetail expectedProductDetail = new ProductDetail();
         expectedProductDetail.setId(1L);
@@ -122,5 +232,31 @@ public class ProductControllerIntegrationTest extends AbstractIntegrationTest {
                 assertTrue(body.contains(expectedProductDetail.getPrice().toString()));
                 assertTrue(body.contains(String.valueOf(expectedProductDetail.getCount())));
             });
+    }
+
+    @Test
+    void testGetProductByIdCached() throws InterruptedException {
+        long productId = 1L;
+
+        for (int i = 0; i < 15; i++) {
+            webTestClient.get()
+                .uri("/products/" + productId)
+                .exchange()
+                .expectStatus().isOk();
+        }
+
+        verify(productRepository, times(1)).findById(productId);
+        verify(orderRepository, times(1)).findByIsActiveTrue();
+
+        // Wait until TTL is expired
+        TimeUnit.SECONDS.sleep(2L);
+
+        webTestClient.get()
+            .uri("/products/" + productId)
+            .exchange()
+            .expectStatus().isOk();
+
+        verify(productRepository, times(2)).findById(productId);
+        verify(orderRepository, times(2)).findByIsActiveTrue();
     }
 }

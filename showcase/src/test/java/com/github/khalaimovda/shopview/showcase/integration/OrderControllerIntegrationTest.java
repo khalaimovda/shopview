@@ -8,15 +8,19 @@ import com.github.khalaimovda.shopview.showcase.repository.ProductRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
+import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 
 import java.math.BigDecimal;
+import java.util.concurrent.TimeUnit;
 
 import static com.github.khalaimovda.shopview.showcase.utils.OrderUtils.calculateOrderPrice;
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 
 public class OrderControllerIntegrationTest extends AbstractIntegrationTest {
 
-    @Autowired
+    @MockitoSpyBean
     private OrderRepository orderRepository;
 
     @Autowired
@@ -26,7 +30,7 @@ public class OrderControllerIntegrationTest extends AbstractIntegrationTest {
     private ProductRepository productRepository;
 
     @Test
-    void testGetAllOrders() throws Exception {
+    void testGetAllOrders() {
         Long orderId = orderRepository.findById(1L).block().getId();
         OrderWithProducts order = orderRepository.findOrderWithProductsById(orderId).block();
         BigDecimal totalPrice = calculateOrderPrice(order);
@@ -48,7 +52,27 @@ public class OrderControllerIntegrationTest extends AbstractIntegrationTest {
     }
 
     @Test
-    void testGetOrderById() throws Exception {
+    void testGetAllOrdersCached() throws Exception {
+        for (int i = 0; i < 15; i++) {
+            webTestClient.get()
+                .uri("/orders")
+                .exchange()
+                .expectStatus().isOk();
+        }
+        verify(orderRepository, times(1)).findAllPlacedOrdersWithProducts();
+
+        // Wait until TTL is expired
+        TimeUnit.SECONDS.sleep(2L);
+
+        webTestClient.get()
+            .uri("/orders")
+            .exchange()
+            .expectStatus().isOk();
+        verify(orderRepository, times(2)).findAllPlacedOrdersWithProducts();
+    }
+
+    @Test
+    void testGetOrderById() {
         Long orderId = orderRepository.findById(1L).block().getId();
         OrderWithProducts order = orderRepository.findOrderWithProductsById(orderId).block();
         BigDecimal totalPrice = calculateOrderPrice(order);
@@ -69,5 +93,27 @@ public class OrderControllerIntegrationTest extends AbstractIntegrationTest {
                 assertTrue(body.contains("Общая сумма:"));
                 assertTrue(body.contains(totalPrice.toString()));
             });
+    }
+
+    @Test
+    void testGetOrderByIdCached() throws Exception {
+        Long orderId = 1L;
+
+        for (int i = 0; i < 15; i++) {
+            webTestClient.get()
+                .uri("/orders/" + orderId)
+                .exchange()
+                .expectStatus().isOk();
+        }
+        verify(orderRepository, times(1)).findOrderWithProductsById(orderId);
+
+        // Wait until TTL is expired
+        TimeUnit.SECONDS.sleep(2L);
+
+        webTestClient.get()
+            .uri("/orders/" + orderId)
+            .exchange()
+            .expectStatus().isOk();
+        verify(orderRepository, times(2)).findOrderWithProductsById(orderId);
     }
 }

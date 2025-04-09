@@ -15,10 +15,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
 import java.math.BigDecimal;
+import java.util.concurrent.TimeUnit;
 
 import static com.github.khalaimovda.shopview.showcase.utils.OrderUtils.calculateOrderPrice;
 import static org.junit.jupiter.api.Assertions.*;
@@ -31,7 +33,7 @@ public class CartControllerIntegrationTest extends AbstractIntegrationTest {
     @Autowired
     private OrderProductRepository orderProductRepository;
 
-    @Autowired
+    @MockitoSpyBean
     private OrderRepository orderRepository;
 
     @Autowired
@@ -41,7 +43,7 @@ public class CartControllerIntegrationTest extends AbstractIntegrationTest {
     private PaymentService paymentService;
 
     @Test
-    void testGetCart() throws Exception {
+    void testGetCart() {
         webTestClient.get()
             .uri("/cart")
             .exchange()
@@ -74,7 +76,28 @@ public class CartControllerIntegrationTest extends AbstractIntegrationTest {
     }
 
     @Test
-    void testAddNewProductToCart() throws Exception {
+    void testGetCartCached() throws InterruptedException {
+        for (int i = 0; i < 15; i++) {
+            webTestClient.get()
+                .uri("/cart")
+                .exchange()
+                .expectStatus().isOk();
+        }
+        verify(orderRepository, times(1)).findByIsActiveTrue();
+
+        // Wait until TTL is expired
+        TimeUnit.SECONDS.sleep(2L);
+
+        webTestClient.get()
+            .uri("/cart")
+            .exchange()
+            .expectStatus().isOk();
+        verify(orderRepository, times(2)).findByIsActiveTrue();
+    }
+
+
+    @Test
+    void testAddNewProductToCart() {
         long productId = 1L;
 
         webTestClient.post()
@@ -93,7 +116,30 @@ public class CartControllerIntegrationTest extends AbstractIntegrationTest {
     }
 
     @Test
-    void testAddExistingProductToCart() throws Exception {
+    void testAddNewProductToCartInvalidCache() {
+        webTestClient.get()
+            .uri("/cart")
+            .exchange()
+            .expectStatus().isOk();
+        verify(orderRepository, times(1)).findByIsActiveTrue();
+
+        // Add new post into cart
+        webTestClient.post()
+            .uri("/cart/add/" + 1)
+            .exchange()
+            .expectStatus().isOk();
+        verify(orderRepository, times(2)).findByIsActiveTrue();
+        // After this cache must be invalidated
+
+        webTestClient.get()
+            .uri("/cart")
+            .exchange()
+            .expectStatus().isOk();
+        verify(orderRepository, times(3)).findByIsActiveTrue();
+    }
+
+    @Test
+    void testAddExistingProductToCart() {
         long productId = 13L;
         Order cart = orderRepository.findByIsActiveTrue().block();
         Product product = productRepository.findById(productId).block();
@@ -111,7 +157,7 @@ public class CartControllerIntegrationTest extends AbstractIntegrationTest {
     }
 
     @Test
-    void testDecreaseProductInCartCountMoreThanOne() throws Exception {
+    void testDecreaseProductInCartCountMoreThanOne() {
         long productId = 13L;
         Order cart = orderRepository.findByIsActiveTrue().block();
         Product product = productRepository.findById(productId).block();
@@ -129,7 +175,7 @@ public class CartControllerIntegrationTest extends AbstractIntegrationTest {
     }
 
     @Test
-    void testDecreaseProductInCartCountOneThenRemove() throws Exception {
+    void testDecreaseProductInCartCountOneThenRemove() {
         long productId = 13L;
         Order cart = orderRepository.findByIsActiveTrue().block();
         Product product = productRepository.findById(productId).block();
@@ -152,7 +198,32 @@ public class CartControllerIntegrationTest extends AbstractIntegrationTest {
     }
 
     @Test
-    void testRemoveProductFromCart() throws Exception {
+    void testDecreaseProductInCartInvalidCache() {
+        long productId = 13L;
+
+        webTestClient.get()
+            .uri("/cart")
+            .exchange()
+            .expectStatus().isOk();
+        verify(orderRepository, times(1)).findByIsActiveTrue();
+
+        // Decrease product count in cart
+        webTestClient.post()
+            .uri("/cart/decrease/" + productId)
+            .exchange()
+            .expectStatus().isOk();
+        verify(orderRepository, times(2)).findByIsActiveTrue();
+        // After this cache must be invalidated
+
+        webTestClient.get()
+            .uri("/cart")
+            .exchange()
+            .expectStatus().isOk();
+        verify(orderRepository, times(3)).findByIsActiveTrue();
+    }
+
+    @Test
+    void testRemoveProductFromCart() {
         long productId = 13L;
         Order cart = orderRepository.findByIsActiveTrue().block();
         Product product = productRepository.findById(productId).block();
@@ -169,7 +240,32 @@ public class CartControllerIntegrationTest extends AbstractIntegrationTest {
     }
 
     @Test
-    void testCheckout() throws Exception {
+    void testRemoveProductFromCartInvalidCache() {
+        long productId = 13L;
+
+        webTestClient.get()
+            .uri("/cart")
+            .exchange()
+            .expectStatus().isOk();
+        verify(orderRepository, times(1)).findByIsActiveTrue();
+
+        // Remove product from cart
+        webTestClient.delete()
+            .uri("/cart/remove/" + productId)
+            .exchange()
+            .expectStatus().isOk();
+        verify(orderRepository, times(2)).findByIsActiveTrue();
+        // After this cache must be invalidated
+
+        webTestClient.get()
+            .uri("/cart")
+            .exchange()
+            .expectStatus().isOk();
+        verify(orderRepository, times(3)).findByIsActiveTrue();
+    }
+
+    @Test
+    void testCheckout() {
         Order cart = orderRepository.findByIsActiveTrue().block();
         long orderId = cart.getId();
         OrderWithProducts orderWithProducts = orderRepository.findOrderWithProductsById(orderId).block();
@@ -190,7 +286,33 @@ public class CartControllerIntegrationTest extends AbstractIntegrationTest {
     }
 
     @Test
-    void testCheckoutInsufficientFunds() throws Exception {
+    void testCheckoutInvalidCache() {
+        when(paymentService.makePayment(any(BigDecimal.class)))
+            .thenReturn(Mono.just(new Balance().balance(BigDecimal.TWO)));
+
+        webTestClient.get()
+            .uri("/cart")
+            .exchange()
+            .expectStatus().isOk();
+        verify(orderRepository, times(1)).findByIsActiveTrue();
+
+        // Remove product from cart
+        webTestClient.post()
+            .uri("/cart/checkout")
+            .exchange()
+            .expectStatus().isOk();
+        verify(orderRepository, times(2)).findByIsActiveTrue();
+        // After this cache must be invalidated
+
+        webTestClient.get()
+            .uri("/cart")
+            .exchange()
+            .expectStatus().isOk();
+        verify(orderRepository, times(3)).findByIsActiveTrue();
+    }
+
+    @Test
+    void testCheckoutInsufficientFunds() {
         Order cart = orderRepository.findByIsActiveTrue().block();
         long orderId = cart.getId();
         OrderWithProducts orderWithProducts = orderRepository.findOrderWithProductsById(orderId).block();
