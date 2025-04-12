@@ -2,14 +2,12 @@ package com.github.khalaimovda.shopview.showcase;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.cache.annotation.EnableCaching;
 
 @SpringBootApplication
-@EnableCaching
-public class ShopViewApplication {
+public class ShowCaseApplication {
 
 	public static void main(String[] args) {
-		SpringApplication.run(ShopViewApplication.class, args);
+		SpringApplication.run(ShowCaseApplication.class, args);
 	}
 
 }

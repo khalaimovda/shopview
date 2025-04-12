@@ -21,6 +21,9 @@
     <div class="product-create">
       <button class="product-create-btn" id="productCreateBtn">Добавить товар</button>
     </div>
+    <div class="user-create">
+      <button class="user-create-btn" id="userCreateBtn">Добавить пользователя</button>
+    </div>
     <div class="product-text-filter">
       <input class="product-text-filter-input" id="productTextFilterInput" type="text" placeholder="Поиск по названию/описанию" />
     </div>
@@ -87,7 +90,7 @@
   <div class="modal-overlay" id="modalOverlay">
     <div class="modal">
       <div class="modal-header">Добавить новый товар в каталог</div>
-      <form id="form" enctype="multipart/form-data" method="post" action="http://127.0.0.1:8080/products">
+      <form id="form" enctype="multipart/form-data" method="post" th:action="@{/products}">>
         <label for="form-name">Название</label>
         <input type="text" id="form-name" name="name" placeholder="Наименование товара" required>
 

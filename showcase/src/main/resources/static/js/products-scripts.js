@@ -5,6 +5,7 @@ const defaultPageSizeValue = 10;
 const modalOverlay = document.getElementById('modalOverlay');
 const textFilterInput = document.getElementById('productTextFilterInput');
 const productCreateBtn = document.getElementById('productCreateBtn');
+const userCreateBtn = document.getElementById('userCreateBtn');
 const form = document.getElementById('form');
 const increments = document.querySelectorAll('.product-purchase-cart-quantity-stepper.increment');
 const decrements = document.querySelectorAll('.product-purchase-cart-quantity-stepper.decrement');
@@ -156,6 +157,8 @@ const createProduct = (event) => {
   event.preventDefault();
 };
 
+const goToUserRegistrationPage = () => window.location.href = '/users/registration';
+
 const changePage = (pageButton) => {
   const page = pageButton.dataset.page;
   const url = new URL(window.location.href);
@@ -213,6 +216,9 @@ carts.forEach(
 
 // Open Modal
 productCreateBtn.addEventListener('click', () => openModal());
+
+// Go to user registration form
+userCreateBtn.addEventListener('click', () => goToUserRegistrationPage());
 
 // Close Modal (when clicking outside the modal)
 modalOverlay.addEventListener('click', (event) => {

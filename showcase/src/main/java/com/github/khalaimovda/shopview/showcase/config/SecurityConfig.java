@@ -14,6 +14,7 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.server.SecurityWebFilterChain;
+import org.thymeleaf.extras.springsecurity5.dialect.SpringSecurityDialect;
 import reactor.core.publisher.Mono;
 
 import static org.springframework.security.config.Customizer.withDefaults;
@@ -58,5 +59,13 @@ public class SecurityConfig {
                 .roles(user.getRoles().stream().map(UserRole::name).toArray(String[]::new))
                 .build())
             .switchIfEmpty(Mono.error(new UsernameNotFoundException(username)));
+    }
+
+    /**
+     * For Thymeleaf to add csrf into forms
+     */
+    @Bean
+    public SpringSecurityDialect springSecurityDialect() {
+        return new SpringSecurityDialect();
     }
 }

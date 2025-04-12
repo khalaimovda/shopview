@@ -147,6 +147,30 @@ main {
   transform: scale(0.97);
 }
 
+.user-create {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.user-create-btn {
+  display: inline-block;
+  margin: 10px;
+  padding: 7px 10px 7px 10px;
+  background-color: var(--button-color);
+  border: 1px solid darkgreen;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.user-create-btn:hover {
+  background-color: var(--button-hover-color);
+}
+
+.user-create-btn:active {
+  transform: scale(0.97);
+}
+
 .product-text-filter {
   display: flex;
   align-items: center;

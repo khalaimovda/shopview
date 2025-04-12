@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <link rel="stylesheet" th:href="@{/css/registration-styles.css}"/>
+    <title>Регистрация</title>
+</head>
+
+<body>
+
+<header>
+    <div class="navbar">
+        <a th:href="@{/orders}" class="navbar-item">Заказы</a>
+        <a th:href="@{/products}" class="navbar-item">Каталог</a>
+    </div>
+</header>
+
+<main>
+    <div class="registration-container">
+        <div class="registration-header">Зарегистрировать пользователя</div>
+        <form id="register-form" method="post" th:action="@{/users}">
+            <label for="form-login">Логин</label>
+            <input type="text" id="form-login" name="username" placeholder="Введите логин" required>
+
+            <label for="form-password">Пароль</label>
+            <input type="password" id="form-password" name="password" placeholder="Введите пароль" required>
+
+            <div class="form-checkbox">
+                <input type="checkbox" id="form-admin" name="isAdmin">
+                <label for="form-admin">Права администратора</label>
+            </div>
+
+            <button type="submit">Создать</button>
+        </form>
+    </div>
+</main>
+
+</body>
+</html>
