@@ -6,6 +6,6 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 public interface OrderService {
-    Flux<OrderListItem> getAllOrders();
+    Flux<OrderListItem> getAllOrders(Long userId);
     Mono<OrderDetail> getOrderDetail(Long id);
 }

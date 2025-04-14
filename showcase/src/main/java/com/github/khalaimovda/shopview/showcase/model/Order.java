@@ -16,4 +16,7 @@ public class Order {
 
     @Column("is_active")
     private Boolean isActive = true;
+
+    @Column("user_id")
+    private Long userId;
 }

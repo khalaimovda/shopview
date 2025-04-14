@@ -1,7 +1,7 @@
 package com.github.khalaimovda.shopview.showcase.config;
 
-import com.github.khalaimovda.shopview.showcase.model.UserRole;
 import com.github.khalaimovda.shopview.showcase.repository.UserRepository;
+import com.github.khalaimovda.shopview.showcase.security.AuthenticatedUser;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
@@ -12,8 +12,10 @@ import org.springframework.security.authentication.UserDetailsRepositoryReactive
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.reactive.EnableWebFluxSecurity;
 import org.springframework.security.config.web.server.ServerHttpSecurity;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.ReactiveUserDetailsService;
-import org.springframework.security.core.userdetails.User;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -75,10 +77,12 @@ public class SecurityConfig {
     public ReactiveUserDetailsService userDetailsService(UserRepository userRepository) {
         return username -> userRepository
             .findByUsername(username)
-            .map(user -> User.withUsername(user.getUsername())
-                .password(user.getPassword())
-                .roles(user.getRoles().stream().map(UserRole::name).toArray(String[]::new))
-                .build())
+            .map(user -> {
+                List<? extends GrantedAuthority> authorities = user.getRoles().stream()
+                    .map(role -> new SimpleGrantedAuthority("ROLE_" + role.name()))
+                    .toList();
+                return (UserDetails) new AuthenticatedUser(user.getId(), user.getUsername(), user.getPassword(), authorities);
+            })
             .switchIfEmpty(Mono.error(new UsernameNotFoundException(username)));
     }
 }

@@ -21,9 +21,9 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     @Cacheable(value = "orders", key = "'all'")
-    public Flux<OrderListItem> getAllOrders() {
+    public Flux<OrderListItem> getAllOrders(Long userId) {
         return orderRepository
-            .findAllPlacedOrdersWithProducts()
+            .findAllPlacedOrdersWithProducts(userId)
             .map(orderMapper::toOrderListItem);
     }
 

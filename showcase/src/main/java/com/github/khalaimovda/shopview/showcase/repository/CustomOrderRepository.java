@@ -5,6 +5,6 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 public interface CustomOrderRepository {
-    Flux<OrderWithProducts> findAllPlacedOrdersWithProducts();
+    Flux<OrderWithProducts> findAllPlacedOrdersWithProducts(Long userId);
     Mono<OrderWithProducts> findOrderWithProductsById(Long id);
 }

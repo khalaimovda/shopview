@@ -21,7 +21,7 @@ public class CustomOrderRepositoryImpl implements CustomOrderRepository {
     private final DatabaseClient databaseClient;
 
     @Override
-    public Flux<OrderWithProducts> findAllPlacedOrdersWithProducts() {
+    public Flux<OrderWithProducts> findAllPlacedOrdersWithProducts(Long userId) {
         return databaseClient.sql(
             """
             SELECT
@@ -36,9 +36,12 @@ public class CustomOrderRepositoryImpl implements CustomOrderRepository {
               ON o.id = op.order_id
             LEFT JOIN products AS p
               ON op.product_id = p.id
-            WHERE o.is_active = false;
+            WHERE
+              o.user_id = :userId AND
+              o.is_active = false;
             """
         )
+        .bind("userId", userId)
         .map((row, metadata) -> convertRowToOrderWithProducts(row))
         .all()
         .groupBy(OrderWithProducts::getId)
