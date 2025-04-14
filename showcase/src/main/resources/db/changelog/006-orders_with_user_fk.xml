@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.8.xsd">
+
+    <changeSet id="9" author="khalaimovda">
+        <preConditions onFail="HALT">
+            <and>
+                <tableExists tableName="orders"/>
+                <tableExists tableName="users"/>
+                <dbms type="postgresql"/>
+            </and>
+        </preConditions>
+
+        <addColumn tableName="orders">
+            <column name="user_id" type="bigint">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+
+        <addForeignKeyConstraint
+                baseTableName="orders"
+                baseColumnNames="user_id"
+                referencedTableName="users"
+                referencedColumnNames="id"
+                constraintName="fk_orders_user"
+                onDelete="CASCADE"/>
+
+        <rollback>
+            <dropColumn tableName="orders" columnName="user_id"/>
+        </rollback>
+    </changeSet>
+
+    <changeSet id="10" author="khalaimovda">
+        <preConditions onFail="HALT">
+            <and>
+                <tableExists tableName="orders"/>
+                <tableExists tableName="users"/>
+                <columnExists tableName="orders" columnName="user_id"/>
+                <dbms type="postgresql"/>
+            </and>
+        </preConditions>
+
+        <sql>
+            ALTER TABLE orders DROP CONSTRAINT IF EXISTS unique_active_order;
+        </sql>
+        <sql>
+            <!-- One user can have only one active order -->
+            CREATE UNIQUE INDEX unique_active_order_per_user ON orders (is_active, user_id) WHERE is_active = TRUE;
+        </sql>
+
+        <rollback>
+            <sql>
+                DROP INDEX IF EXISTS unique_active_order_per_user;
+                CREATE UNIQUE INDEX unique_active_order ON orders (is_active) WHERE is_active = TRUE;
+            </sql>
+        </rollback>
+    </changeSet>
+
+</databaseChangeLog>
