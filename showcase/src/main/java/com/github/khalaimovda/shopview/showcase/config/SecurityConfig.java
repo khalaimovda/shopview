@@ -2,10 +2,14 @@ package com.github.khalaimovda.shopview.showcase.config;
 
 import com.github.khalaimovda.shopview.showcase.model.UserRole;
 import com.github.khalaimovda.shopview.showcase.repository.UserRepository;
+import lombok.RequiredArgsConstructor;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.ReactiveAuthenticationManager;
 import org.springframework.security.authentication.UserDetailsRepositoryReactiveAuthenticationManager;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.reactive.EnableWebFluxSecurity;
 import org.springframework.security.config.web.server.ServerHttpSecurity;
 import org.springframework.security.core.userdetails.ReactiveUserDetailsService;
@@ -24,7 +28,12 @@ import static org.springframework.security.config.Customizer.withDefaults;
 
 @Configuration
 @EnableWebFluxSecurity
+@EnableMethodSecurity
+@EnableConfigurationProperties(ImageServiceProperties.class)
+@RequiredArgsConstructor
 public class SecurityConfig {
+
+    private final ImageServiceProperties imageProperties;
 
     @Bean
     public SecurityWebFilterChain securityWebFilterChain(ServerHttpSecurity http) {
@@ -36,10 +45,12 @@ public class SecurityConfig {
 
         return http
             .authorizeExchange(exchanges -> exchanges
-//                .anyExchange().authenticated()
-                .anyExchange().permitAll()
+                .pathMatchers("/js/**", "/css/**", imageProperties.getBaseUrl() + "**").permitAll()
+                .pathMatchers(HttpMethod.GET, "/products", "/products/*").permitAll()
+                .pathMatchers("/login").permitAll()
+                .pathMatchers("/users").hasRole("ADMIN")
+                .anyExchange().authenticated()
             )
-            .httpBasic(withDefaults())
             .formLogin(form -> form.authenticationSuccessHandler(loginSuccessHandler))
             .logout(logout -> logout.logoutSuccessHandler(logoutSuccessHandler))
             .build();

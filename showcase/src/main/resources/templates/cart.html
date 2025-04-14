@@ -10,7 +10,7 @@
 
 <header>
   <div class="navbar">
-    <a th:href="@{/orders}" class="navbar-item">Заказы</a>
+    <a th:if="${authenticated}" th:href="@{/orders}" class="navbar-item">Заказы</a>
     <a th:href="@{/products}" class="navbar-item">Каталог</a>
   </div>
 </header>

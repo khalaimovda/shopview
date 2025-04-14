@@ -3,6 +3,8 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="_csrf" th:content="${_csrf.token}"/>
+  <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
   <link rel="stylesheet" th:href="@{/css/products-styles.css}"/>
   <title>Products</title>
 </head>
@@ -16,8 +18,8 @@
       <a th:if="${authenticated}" th:href="@{/logout}" class="navbar-item">Sign Out</a>
     </div>
     <div class="navbar-right">
-      <a th:href="@{/orders}" class="navbar-item">Заказы</a>
-      <a th:href="@{/cart}" class="navbar-item">Корзина</a>
+      <a th:if="${authenticated}" th:href="@{/orders}" class="navbar-item">Заказы</a>
+      <a th:if="${authenticated}" th:href="@{/cart}" class="navbar-item">Корзина</a>
     </div>
   </div>
 </header>
@@ -58,7 +60,7 @@
         <div class="product-purchase-price">
           <div>Цена: <span th:text="${product.price}">1500</span> руб</div>
         </div>
-        <div class="product-purchase-cart" th:data-product-id="${productId}">
+        <div th:if="${authenticated}" class="product-purchase-cart" th:data-product-id="${productId}">
           <div class="product-purchase-cart-quantity">
             <button class="product-purchase-cart-quantity-stepper decrement">−</button>
             <span class="product-purchase-cart-quantity-value" th:text="${product.count}">1</span>
@@ -98,7 +100,7 @@
   <div class="modal-overlay" id="modalOverlay">
     <div class="modal">
       <div class="modal-header">Добавить новый товар в каталог</div>
-      <form id="form" enctype="multipart/form-data" method="post" th:action="@{/products}">>
+      <form id="form" enctype="multipart/form-data" method="post" th:action="@{/products}">
         <label for="form-name">Название</label>
         <input type="text" id="form-name" name="name" placeholder="Наименование товара" required>
 

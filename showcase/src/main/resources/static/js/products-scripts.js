@@ -14,6 +14,10 @@ const removals = document.querySelectorAll('.product-purchase-cart-remove');
 const carts = document.querySelectorAll('.product-purchase-cart');
 const pageSize = document.getElementById('pageSize');
 
+// CSRF
+const csrfToken = document.querySelector('meta[name="_csrf"]').getAttribute('content');
+const csrfHeader = document.querySelector('meta[name="_csrf_header"]').getAttribute('content');
+
 // Functions
 const openModal = () => {
   modalOverlay.style.display = 'flex';
@@ -43,7 +47,12 @@ const addProductToCart = (cart) => {
 
   const productId = cart.dataset.productId;
 
-  fetch(`/cart/add/${productId}`, {method: 'POST'})
+  fetch(`/cart/add/${productId}`, {
+    method: 'POST',
+    headers: {
+      [csrfHeader]: csrfToken
+    }
+  })
   .then(response => {
     if (!response.ok) {
       throw new Error(`Error: ${response.statusText}`);
@@ -69,7 +78,12 @@ const removeProductFromCart = (cart) => {
 
   const productId = cart.dataset.productId;
 
-  fetch(`/cart/remove/${productId}`, {method: 'DELETE'})
+  fetch(`/cart/remove/${productId}`, {
+    method: 'DELETE',
+    headers: {
+      [csrfHeader]: csrfToken
+    }
+  })
   .then(response => {
     if (!response.ok) {
       throw new Error(`Error: ${response.statusText}`);
@@ -92,7 +106,12 @@ const incrementProductQuantityInCart = (cart) => {
 
   const productId = cart.dataset.productId;
 
-  fetch(`/cart/add/${productId}`, {method: 'POST'})
+  fetch(`/cart/add/${productId}`, {
+    method: 'POST',
+    headers: {
+      [csrfHeader]: csrfToken
+    }
+  })
   .then(response => {
     if (!response.ok) {
       throw new Error(`Error: ${response.statusText}`);
@@ -113,7 +132,12 @@ const decrementProductQuantityInCart = (cart) => {
 
   const productId = cart.dataset.productId;
 
-  fetch(`/cart/decrease/${productId}`, {method: 'POST'})
+  fetch(`/cart/decrease/${productId}`, {
+    method: 'POST',
+    headers: {
+      [csrfHeader]: csrfToken
+    }
+  })
   .then(response => {
     if (!response.ok) {
       throw new Error(`Error: ${response.statusText}`);
@@ -139,6 +163,9 @@ const createProduct = (event) => {
   fetch(form.action, {
     method: 'POST',
     body: formData,
+    headers: {
+        [csrfHeader]: csrfToken
+      }
   })
     .then(response => {
       if (!response.ok) {
