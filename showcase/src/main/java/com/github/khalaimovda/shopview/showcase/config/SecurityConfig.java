@@ -14,8 +14,11 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.server.SecurityWebFilterChain;
-import org.thymeleaf.extras.springsecurity5.dialect.SpringSecurityDialect;
+import org.springframework.security.web.server.authentication.RedirectServerAuthenticationSuccessHandler;
+import org.springframework.security.web.server.authentication.logout.RedirectServerLogoutSuccessHandler;
 import reactor.core.publisher.Mono;
+
+import java.net.URI;
 
 import static org.springframework.security.config.Customizer.withDefaults;
 
@@ -25,13 +28,20 @@ public class SecurityConfig {
 
     @Bean
     public SecurityWebFilterChain securityWebFilterChain(ServerHttpSecurity http) {
+        RedirectServerAuthenticationSuccessHandler loginSuccessHandler =
+            new RedirectServerAuthenticationSuccessHandler("/products");
+
+        RedirectServerLogoutSuccessHandler logoutSuccessHandler = new RedirectServerLogoutSuccessHandler();
+        logoutSuccessHandler.setLogoutSuccessUrl(URI.create("/products"));
+
         return http
             .authorizeExchange(exchanges -> exchanges
-                .anyExchange().authenticated()
+//                .anyExchange().authenticated()
+                .anyExchange().permitAll()
             )
             .httpBasic(withDefaults())
-            .formLogin(withDefaults())
-            .logout(withDefaults())
+            .formLogin(form -> form.authenticationSuccessHandler(loginSuccessHandler))
+            .logout(logout -> logout.logoutSuccessHandler(logoutSuccessHandler))
             .build();
     }
 
@@ -59,13 +69,5 @@ public class SecurityConfig {
                 .roles(user.getRoles().stream().map(UserRole::name).toArray(String[]::new))
                 .build())
             .switchIfEmpty(Mono.error(new UsernameNotFoundException(username)));
-    }
-
-    /**
-     * For Thymeleaf to add csrf into forms
-     */
-    @Bean
-    public SpringSecurityDialect springSecurityDialect() {
-        return new SpringSecurityDialect();
     }
 }

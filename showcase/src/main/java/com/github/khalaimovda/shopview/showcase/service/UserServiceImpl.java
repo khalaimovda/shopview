@@ -1,5 +1,6 @@
 package com.github.khalaimovda.shopview.showcase.service;
 
+import com.github.khalaimovda.shopview.showcase.dto.UserListItem;
 import com.github.khalaimovda.shopview.showcase.dto.UserRegistrationForm;
 import com.github.khalaimovda.shopview.showcase.mapper.UserMapper;
 import com.github.khalaimovda.shopview.showcase.model.User;
@@ -8,6 +9,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
+
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -21,5 +24,13 @@ public class UserServiceImpl implements UserService {
     public Mono<User> createUser(UserRegistrationForm form) {
         User user = userMapper.toUser(form, passwordEncoder);
         return userRepository.save(user);
+    }
+
+    @Override
+    public Mono<List<UserListItem>> getAllUsers() {
+        return userRepository
+            .findAll()
+            .map(userMapper::toUserListItem)
+            .collectList();
     }
 }

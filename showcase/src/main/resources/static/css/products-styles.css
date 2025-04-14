@@ -58,7 +58,7 @@ header {
   height: 50px;
   background-color: var(--header-background-color);
   display: flex;
-  justify-content: flex-end;
+  justify-content: center;
   position: sticky;
   top: 0;
 }
@@ -74,20 +74,28 @@ header::before {
 }
 
 .navbar {
+  width: 100%;
   height: 100%;
   display: flex;
+  justify-content: space-between;
   align-items: center;
-  padding: 10px;
+  padding: 0 10px;
+  box-sizing: border-box;
+}
+
+.navbar-left,
+.navbar-right {
+  display: flex;
+  align-items: center;
 }
 
 .navbar-item {
   display: inline-block;
   margin: 10px;
-  padding: 5px 7px 5px 7px;
+  padding: 5px 7px;
   background-color: var(--button-color);
   border: 1px solid darkgreen;
   border-radius: 5px;
-
   cursor: pointer;
 }
 
@@ -98,7 +106,6 @@ header::before {
 .navbar-item:active {
   transform: scale(0.97);
 }
-
 
 /* Main */
 

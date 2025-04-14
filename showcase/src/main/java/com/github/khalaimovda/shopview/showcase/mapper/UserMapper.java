@@ -1,5 +1,6 @@
 package com.github.khalaimovda.shopview.showcase.mapper;
 
+import com.github.khalaimovda.shopview.showcase.dto.UserListItem;
 import com.github.khalaimovda.shopview.showcase.dto.UserRegistrationForm;
 import com.github.khalaimovda.shopview.showcase.model.User;
 import com.github.khalaimovda.shopview.showcase.model.UserRole;
@@ -19,6 +20,9 @@ public abstract class UserMapper {
     })
     public abstract User toUser(UserRegistrationForm registrationForm, @Context PasswordEncoder passwordEncoder);
 
+    @Mapping(source = "roles", target = "isAdmin", qualifiedByName = "setIsAdmin")
+    public abstract UserListItem toUserListItem(User user);
+
     @Named("setUserRoles")
     public List<UserRole> setUserRoles(Boolean isAdmin) {
         return isAdmin != null && isAdmin ? List.of(UserRole.ADMIN) : List.of();
@@ -27,5 +31,10 @@ public abstract class UserMapper {
     @Named("encodePassword")
     public String encodePassword(String password, @Context PasswordEncoder encoder) {
         return encoder.encode(password);
+    }
+
+    @Named("setIsAdmin")
+    public boolean setIsAdmin(List<UserRole> roles) {
+        return roles.contains(UserRole.ADMIN);
     }
 }

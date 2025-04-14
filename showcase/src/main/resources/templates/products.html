@@ -11,17 +11,25 @@
 
 <header>
   <div class="navbar">
-    <a th:href="@{/orders}" class="navbar-item">Заказы</a>
-    <a th:href="@{/cart}" class="navbar-item">Корзина</a>
+    <div class="navbar-left">
+      <a th:unless="${authenticated}" th:href="@{/login}" class="navbar-item">Sign In</a>
+      <a th:if="${authenticated}" th:href="@{/logout}" class="navbar-item">Sign Out</a>
+    </div>
+    <div class="navbar-right">
+      <a th:href="@{/orders}" class="navbar-item">Заказы</a>
+      <a th:href="@{/cart}" class="navbar-item">Корзина</a>
+    </div>
   </div>
 </header>
 
 <main>
   <div class="product-bar">
-    <div class="product-create">
+    <div class="product-create"
+         style="visibility: hidden;" th:style="${authenticated && #lists.contains(authorities, 'ROLE_ADMIN')} ? 'visibility: visible;' : 'visibility: hidden;'">
       <button class="product-create-btn" id="productCreateBtn">Добавить товар</button>
     </div>
-    <div class="user-create">
+    <div class="user-create"
+         style="visibility: hidden;" th:style="${authenticated && #lists.contains(authorities, 'ROLE_ADMIN')} ? 'visibility: visible;' : 'visibility: hidden;'">
       <button class="user-create-btn" id="userCreateBtn">Добавить пользователя</button>
     </div>
     <div class="product-text-filter">

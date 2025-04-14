@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <link rel="stylesheet" th:href="@{/css/users-styles.css}"/>
+  <title>Пользователи</title>
+</head>
+<body>
+
+<header>
+  <div class="navbar">
+    <a th:href="@{/products}" class="navbar-item">Каталог</a>
+    <a th:href="@{/cart}" class="navbar-item">Корзина</a>
+  </div>
+</header>
+
+<main>
+  <div class="users">
+    <div class="user user-header">
+      <span class="user-id">ID</span>
+      <span class="user-username">Username</span>
+      <span class="user-is-admin">Role</span>
+    </div>
+    <div class="user" th:each="user : ${users}">
+      <span class="user-id" th:text="${user.id}"></span>
+      <span class="user-username" th:text="${user.username}"></span>
+      <span class="user-is-admin" th:text="${user.isAdmin} ? 'ADMIN' : ''"></span>
+    </div>
+  </div>
+
+</main>
+
+</body>
+</html>
