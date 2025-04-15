@@ -52,10 +52,19 @@ header::before {
 }
 
 .navbar {
+  width: 100%;
   height: 100%;
   display: flex;
+  justify-content: space-between;
   align-items: center;
-  padding: 10px;
+  padding: 0 10px;
+  box-sizing: border-box;
+}
+
+.navbar-left,
+.navbar-right {
+  display: flex;
+  align-items: center;
 }
 
 .navbar-item {

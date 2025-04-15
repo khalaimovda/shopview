@@ -10,8 +10,14 @@
 
 <header>
     <div class="navbar">
-        <a th:if="${authenticated}" th:href="@{/cart}" class="navbar-item">Корзина</a>
-        <a th:href="@{/products}" class="navbar-item">Каталог</a>
+        <div class="navbar-left">
+            <a th:unless="${authenticated}" th:href="@{/login}" class="navbar-item">Sign In</a>
+            <a th:if="${authenticated}" th:href="@{/logout}" class="navbar-item">Sign Out</a>
+        </div>
+        <div class="navbar-right">
+            <a th:if="${authenticated}" th:href="@{/cart}" class="navbar-item">Корзина</a>
+            <a th:href="@{/products}" class="navbar-item">Каталог</a>
+        </div>
     </div>
 </header>
 

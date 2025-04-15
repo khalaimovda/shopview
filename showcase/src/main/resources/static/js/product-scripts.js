@@ -7,11 +7,20 @@ const removeBtn = document.querySelector('.product-purchase-cart-remove');
 const quantity = document.querySelector('.product-purchase-cart-quantity');
 const quantityValue = document.querySelector('.product-purchase-cart-quantity-value');
 
+// CSRF
+const csrfToken = document.querySelector('meta[name="_csrf"]').getAttribute('content');
+const csrfHeader = document.querySelector('meta[name="_csrf_header"]').getAttribute('content');
+
 // Product ID from data attribute
 const productId = cart.closest('.product').dataset.productId;
 
 const addProductToCart = () => {
-  fetch(`/cart/add/${productId}`, {method: 'POST'})
+  fetch(`/cart/add/${productId}`, {
+    method: 'POST',
+    headers: {
+      [csrfHeader]: csrfToken
+    }
+  })
   .then(response => {
     if (!response.ok) {
       throw new Error(`Error: ${response.statusText}`);
@@ -30,7 +39,12 @@ const addProductToCart = () => {
 };
 
 const removeProductFromCart = () => {
-  fetch(`/cart/remove/${productId}`, {method: 'DELETE'})
+  fetch(`/cart/remove/${productId}`, {
+    method: 'DELETE',
+    headers: {
+      [csrfHeader]: csrfToken
+    }
+  })
   .then(response => {
     if (!response.ok) {
       throw new Error(`Error: ${response.statusText}`);
@@ -49,7 +63,12 @@ const removeProductFromCart = () => {
 };
 
 const incrementProductQuantityInCart = () => {
-  fetch(`/cart/add/${productId}`, {method: 'POST'})
+  fetch(`/cart/add/${productId}`, {
+    method: 'POST',
+    headers: {
+      [csrfHeader]: csrfToken
+    }
+  })
   .then(response => {
     if (!response.ok) {
       throw new Error(`Error: ${response.statusText}`);
@@ -65,7 +84,12 @@ const incrementProductQuantityInCart = () => {
 };
 
 const decrementProductQuantityInCart = () => {
-  fetch(`/cart/decrease/${productId}`, {method: 'POST'})
+  fetch(`/cart/decrease/${productId}`, {
+    method: 'POST',
+    headers: {
+      [csrfHeader]: csrfToken
+    }
+  })
   .then(response => {
     if (!response.ok) {
       throw new Error(`Error: ${response.statusText}`);

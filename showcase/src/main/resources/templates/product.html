@@ -3,6 +3,8 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="_csrf" th:content="${_csrf.token}"/>
+  <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
   <link rel="stylesheet" th:href="@{/css/product-styles.css}"/>
   <title>Product</title>
 </head>
@@ -10,9 +12,15 @@
 
 <header>
   <div class="navbar">
-    <a th:if="${authenticated}" th:href="@{/orders}" class="navbar-item">Заказы</a>
-    <a th:if="${authenticated}" th:href="@{/cart}" class="navbar-item">Корзина</a>
-    <a th:href="@{/products}" class="navbar-item">Каталог</a>
+    <div class="navbar-left">
+      <a th:unless="${authenticated}" th:href="@{/login}" class="navbar-item">Sign In</a>
+      <a th:if="${authenticated}" th:href="@{/logout}" class="navbar-item">Sign Out</a>
+    </div>
+    <div class="navbar-right">
+      <a th:if="${authenticated}" th:href="@{/orders}" class="navbar-item">Заказы</a>
+      <a th:if="${authenticated}" th:href="@{/cart}" class="navbar-item">Корзина</a>
+      <a th:href="@{/products}" class="navbar-item">Каталог</a>
+    </div>
   </div>
 </header>
 
@@ -30,7 +38,7 @@
       <div class="product-purchase-price">
         <div>Цена: <span th:text="${product.price}">1500</span> руб</div>
       </div>
-      <div class="product-purchase-cart">
+      <div th:if="${authenticated}" class="product-purchase-cart">
         <div class="product-purchase-cart-quantity">
           <button class="product-purchase-cart-quantity-stepper decrement">−</button>
           <span class="product-purchase-cart-quantity-value" th:text="${product.count}">1</span>
