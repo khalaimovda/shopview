@@ -14,6 +14,9 @@ public class OrderDetail {
     private Long oderId;
 
     @NotNull
+    private Long userId;
+
+    @NotNull
     private List<ProductOfOrder> products = new ArrayList<>();
 
     @NotNull

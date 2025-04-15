@@ -1,3 +1,7 @@
+// CSRF
+const csrfToken = document.querySelector('meta[name="_csrf"]').getAttribute('content');
+const csrfHeader = document.querySelector('meta[name="_csrf_header"]').getAttribute('content');
+
 document.addEventListener('DOMContentLoaded', () => {
   // Update the total price for a single product row
   function updateProductTotal(cartRow) {
@@ -44,7 +48,12 @@ document.addEventListener('DOMContentLoaded', () => {
   function incrementProductQuantity(cartRow) {
     const productId = cartRow.dataset.productId;
     const quantityElem = cartRow.querySelector('.product-count-regulation-value');
-    fetch(`/cart/add/${productId}`, { method: 'POST' })
+    fetch(`/cart/add/${productId}`, {
+        method: 'POST',
+        headers: {
+          [csrfHeader]: csrfToken
+        }
+    })
       .then(response => {
         if (!response.ok) {
           throw new Error(`Error increasing product: ${response.statusText}`);
@@ -69,7 +78,12 @@ document.addEventListener('DOMContentLoaded', () => {
     if (quantity <= 1) {
       removeProductFromCart(cartRow);
     } else {
-      fetch(`/cart/decrease/${productId}`, { method: 'POST' })
+      fetch(`/cart/decrease/${productId}`, {
+        method: 'POST',
+        headers: {
+          [csrfHeader]: csrfToken
+        }
+      })
         .then(response => {
           if (!response.ok) {
             throw new Error(`Error decreasing product: ${response.statusText}`);
@@ -89,7 +103,12 @@ document.addEventListener('DOMContentLoaded', () => {
   // Remove product from the cart completely
   function removeProductFromCart(cartRow) {
     const productId = cartRow.dataset.productId;
-    fetch(`/cart/remove/${productId}`, { method: 'DELETE' })
+    fetch(`/cart/remove/${productId}`, {
+      method: 'DELETE',
+      headers: {
+        [csrfHeader]: csrfToken
+      }
+    })
       .then(response => {
         if (!response.ok) {
           throw new Error(`Error removing product: ${response.statusText}`);
@@ -106,7 +125,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Checkout (place order)
   function placeOrder() {
-    fetch('/cart/checkout', { method: 'POST' })
+    fetch('/cart/checkout', {
+      method: 'POST',
+      headers: {
+        [csrfHeader]: csrfToken
+      }
+    })
       .then(response => {
         if (response.ok) {
           alert('Заказ успешно оформлен!');

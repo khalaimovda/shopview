@@ -14,6 +14,7 @@ import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.access.annotation.Secured;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import reactor.core.publisher.Mono;
@@ -48,6 +49,7 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
+    @Secured("ROLE_ADMIN")
     @Transactional
     @CacheEvict(value = "products", allEntries = true)
     public Mono<Void> createProduct(ProductCreateForm form) {
@@ -59,7 +61,7 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     @Cacheable(value = "products", key = "#id")
-    public Mono<ProductDetail> getProductById(Long id) {
+    public Mono<ProductDetail> getProductDetailById(Long id, Long userId) {
         return productRepository
             .findById(id)
             .switchIfEmpty(Mono.error(new NoSuchElementException(String.format("Product with id %s not found", id))))
@@ -67,7 +69,7 @@ public class ProductServiceImpl implements ProductService {
                 product -> {
                     String imageSrcPath = imageService.getImageSrcPath(product.getImagePath());
                     return orderRepository
-                        .findByIsActiveTrue()
+                        .findByUserIdAndIsActiveTrue(userId)
                         .flatMap(
                             cart -> orderProductRepository
                                 .findByOrderIdAndProductId(cart.getId(), product.getId())

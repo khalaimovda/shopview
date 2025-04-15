@@ -7,5 +7,5 @@ import reactor.core.publisher.Mono;
 
 @Repository
 public interface OrderRepository extends ReactiveCrudRepository<Order, Long>, CustomOrderRepository {
-    Mono<Order> findByIsActiveTrue();
+    Mono<Order> findByUserIdAndIsActiveTrue(Long userId);
 }

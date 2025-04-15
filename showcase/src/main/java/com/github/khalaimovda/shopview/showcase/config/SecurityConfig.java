@@ -9,7 +9,6 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.ReactiveAuthenticationManager;
 import org.springframework.security.authentication.UserDetailsRepositoryReactiveAuthenticationManager;
-import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.reactive.EnableWebFluxSecurity;
 import org.springframework.security.config.web.server.ServerHttpSecurity;
 import org.springframework.security.core.GrantedAuthority;
@@ -25,12 +24,12 @@ import org.springframework.security.web.server.authentication.logout.RedirectSer
 import reactor.core.publisher.Mono;
 
 import java.net.URI;
+import java.util.List;
 
 import static org.springframework.security.config.Customizer.withDefaults;
 
 @Configuration
 @EnableWebFluxSecurity
-@EnableMethodSecurity
 @EnableConfigurationProperties(ImageServiceProperties.class)
 @RequiredArgsConstructor
 public class SecurityConfig {
@@ -53,8 +52,15 @@ public class SecurityConfig {
                 .pathMatchers("/users").hasRole("ADMIN")
                 .anyExchange().authenticated()
             )
-            .formLogin(form -> form.authenticationSuccessHandler(loginSuccessHandler))
-            .logout(logout -> logout.logoutSuccessHandler(logoutSuccessHandler))
+//            .formLogin(form -> form.authenticationSuccessHandler(loginSuccessHandler))
+//            .formLogin(form -> form
+//                .authenticationSuccessHandler(loginSuccessHandler)
+//                .authenticationFailureHandler(new RedirectServerAuthenticationFailureHandler("/login?error"))
+//            )
+//            .logout(logout -> logout.logoutSuccessHandler(logoutSuccessHandler))
+
+            .formLogin(withDefaults())
+            .logout(withDefaults())
             .build();
     }
 

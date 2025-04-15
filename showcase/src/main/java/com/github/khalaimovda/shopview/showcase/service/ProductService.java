@@ -10,5 +10,5 @@ import reactor.core.publisher.Mono;
 public interface ProductService {
     Mono<Page<ProductListItem>> getAllProducts(String contentSubstring, Pageable pageable);
     Mono<Void> createProduct(ProductCreateForm form);
-    Mono<ProductDetail> getProductById(Long id);
+    Mono<ProductDetail> getProductDetailById(Long id, Long userId);
 }

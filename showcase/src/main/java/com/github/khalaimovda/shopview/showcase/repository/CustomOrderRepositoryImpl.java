@@ -26,6 +26,7 @@ public class CustomOrderRepositoryImpl implements CustomOrderRepository {
             """
             SELECT
               o.id AS order_id,
+              o.user_id AS user_id,
               p.id AS product_id,
               p.name AS product_name,
               p.price AS product_price,
@@ -54,6 +55,7 @@ public class CustomOrderRepositoryImpl implements CustomOrderRepository {
                 """
                 SELECT
                   o.id AS order_id,
+                  o.user_id AS user_id,
                   p.id AS product_id,
                   p.name AS product_name,
                   p.price AS product_price,
@@ -78,6 +80,7 @@ public class CustomOrderRepositoryImpl implements CustomOrderRepository {
     private OrderWithProducts convertRowToOrderWithProducts(Row row) {
         OrderWithProducts order = new OrderWithProducts();
         order.setId(row.get("order_id", Long.class));
+        order.setUserId(row.get("user_id", Long.class));
 
         order.setProducts(new ArrayList<>());
         if (row.get("product_id") != null) {

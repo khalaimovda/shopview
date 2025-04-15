@@ -14,5 +14,8 @@ public class OrderWithProducts {
     private Long id;
 
     @NotNull
+    private Long userId;
+
+    @NotNull
     private List<ProductOfOrder> products = new ArrayList<>();
 }

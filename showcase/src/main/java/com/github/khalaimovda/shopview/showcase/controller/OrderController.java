@@ -4,6 +4,7 @@ import com.github.khalaimovda.shopview.showcase.security.AuthenticatedUser;
 import com.github.khalaimovda.shopview.showcase.service.OrderService;
 import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -23,6 +24,7 @@ public class OrderController {
     private final OrderService orderService;
 
     @GetMapping("")
+    @PreAuthorize("isAuthenticated()")
     public Mono<String> getAllOrders(@AuthenticationPrincipal AuthenticatedUser user, Model model) {
         return orderService
             .getAllOrders(user.getId())

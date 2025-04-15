@@ -30,9 +30,9 @@ public class CartServiceImpl implements CartService {
     @Override
     @Transactional
     @Cacheable(value = "orders", key = "'cart'")
-    public Mono<OrderDetail> getCart() {
+    public Mono<OrderDetail> getCart(Long userId) {
         return orderRepository
-            .findByIsActiveTrue()
+            .findByUserIdAndIsActiveTrue(userId)
             .flatMap(cart -> orderService.getOrderDetail(cart.getId()));
     }
 
@@ -42,9 +42,9 @@ public class CartServiceImpl implements CartService {
         @CacheEvict(value = "products", allEntries = true),
         @CacheEvict(value = "orders", allEntries = true)
     })
-    public Mono<Void> addProductToCart(Long productId) {
+    public Mono<Void> addProductToCart(Long productId, Long userId) {
         return getProductByIdOrNoSuchElementException(productId)
-            .flatMap(product -> getOrCreateActiveOrder()
+            .flatMap(product -> getOrCreateActiveOrder(userId)
             .flatMap(cart -> orderProductService.addProductToOrder(cart.getId(), product.getId())));
     }
 
@@ -54,9 +54,9 @@ public class CartServiceImpl implements CartService {
         @CacheEvict(value = "products", allEntries = true),
         @CacheEvict(value = "orders", allEntries = true)
     })
-    public Mono<Void> decreaseProductInCart(Long productId) {
+    public Mono<Void> decreaseProductInCart(Long productId, Long userId) {
         return getProductByIdOrNoSuchElementException(productId)
-            .flatMap(product -> getActiveOrderOrNoSuchElementException()
+            .flatMap(product -> getActiveOrderOrNoSuchElementException(userId)
             .flatMap(cart -> orderProductService.decreaseProductInOrder(cart.getId(), product.getId())));
     }
 
@@ -66,9 +66,9 @@ public class CartServiceImpl implements CartService {
         @CacheEvict(value = "products", allEntries = true),
         @CacheEvict(value = "orders", allEntries = true)
     })
-    public Mono<Void> removeProductFromCart(Long productId) {
+    public Mono<Void> removeProductFromCart(Long productId, Long userId) {
         return getProductByIdOrNoSuchElementException(productId)
-            .flatMap(product -> getActiveOrderOrNoSuchElementException()
+            .flatMap(product -> getActiveOrderOrNoSuchElementException(userId)
             .flatMap(cart -> orderProductService.removeProductFromOrder(cart.getId(), product.getId())));
     }
 
@@ -78,8 +78,8 @@ public class CartServiceImpl implements CartService {
         @CacheEvict(value = "products", allEntries = true),
         @CacheEvict(value = "orders", allEntries = true)
     })
-    public Mono<Void> checkout() {
-        return getActiveOrderOrNoSuchElementException()
+    public Mono<Void> checkout(Long userId) {
+        return getActiveOrderOrNoSuchElementException(userId)
             .flatMap(cart -> orderService
                 .getOrderDetail(cart.getId())
                 .flatMap(orderDetail -> {
@@ -100,10 +100,15 @@ public class CartServiceImpl implements CartService {
     }
 
     @Transactional
-    private Mono<Order> getOrCreateActiveOrder() {
+    private Mono<Order> getOrCreateActiveOrder(Long userId) {
         return orderRepository
-            .findByIsActiveTrue()
-            .switchIfEmpty(Mono.defer(() -> orderRepository.save(new Order())));
+            .findByUserIdAndIsActiveTrue(userId)
+            .switchIfEmpty(Mono.defer(() -> {
+                Order order = new Order();
+                order.setIsActive(true);
+                order.setUserId(userId);
+                return orderRepository.save(order);
+            }));
     }
 
     private Mono<Product> getProductByIdOrNoSuchElementException(Long productId) {
@@ -112,9 +117,9 @@ public class CartServiceImpl implements CartService {
                 new NoSuchElementException(String.format("Product with id %s is not found", productId))));
     }
 
-    private Mono<Order> getActiveOrderOrNoSuchElementException() {
+    private Mono<Order> getActiveOrderOrNoSuchElementException(Long userId) {
         return orderRepository
-            .findByIsActiveTrue()
-            .switchIfEmpty(Mono.error(new NoSuchElementException("Active order is not found")));
+            .findByUserIdAndIsActiveTrue(userId)
+            .switchIfEmpty(Mono.error(new NoSuchElementException("Active order is not found for userId: " + userId)));
     }
 }

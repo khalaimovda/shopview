@@ -4,9 +4,9 @@ import com.github.khalaimovda.shopview.showcase.dto.OrderDetail;
 import reactor.core.publisher.Mono;
 
 public interface CartService {
-    Mono<OrderDetail> getCart();
-    Mono<Void> addProductToCart(Long productId);
-    Mono<Void> decreaseProductInCart(Long productId);
-    Mono<Void> removeProductFromCart(Long productId);
-    Mono<Void> checkout();
+    Mono<OrderDetail> getCart(Long userId);
+    Mono<Void> addProductToCart(Long productId, Long userId);
+    Mono<Void> decreaseProductInCart(Long productId, Long userId);
+    Mono<Void> removeProductFromCart(Long productId, Long userId);
+    Mono<Void> checkout(Long userId);
 }
