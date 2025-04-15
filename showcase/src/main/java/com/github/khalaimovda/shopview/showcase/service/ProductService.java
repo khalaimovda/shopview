@@ -7,8 +7,10 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import reactor.core.publisher.Mono;
 
+import java.util.Optional;
+
 public interface ProductService {
-    Mono<Page<ProductListItem>> getAllProducts(String contentSubstring, Pageable pageable);
+    Mono<Page<ProductListItem>> getAllProducts(String contentSubstring, Pageable pageable, Optional<Long> userId);
     Mono<Void> createProduct(ProductCreateForm form);
-    Mono<ProductDetail> getProductDetailById(Long id, Long userId);
+    Mono<ProductDetail> getProductDetailById(Long id, Optional<Long> userId);
 }

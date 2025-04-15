@@ -36,17 +36,19 @@ public class ProductCacheServiceImpl implements ProductCacheService {
     @Override
     @Cacheable(
         value = "products",
-        key = "'listItems' + ':' + #name + ':' + #description + ':' + #limit + ':' + #offset"
+        key = "'listItems' + ':' + #name + ':' + #description + ':' + #limit + ':' + #offset + ':' + (#userId.isPresent() ? #userId.get() : 'null')"
     )
-    public Mono<List<ProductListItem>> getProductItems(String name, String description, int limit, long offset) {
+    public Mono<List<ProductListItem>> getProductItems(String name, String description, int limit, long offset, Optional<Long> userId) {
         Mono<List<Product>> monoProducts = productRepository
             .findByNameOrDescriptionContaining(name, description, limit, offset)
             .collectList();
 
-        Mono<Optional<Order>> monoCart = orderRepository
-            .findByIsActiveTrue()
-            .map(Optional::of)
-            .switchIfEmpty(Mono.just(Optional.empty()));
+        Mono<Optional<Order>> monoCart = userId.map(
+            uid -> orderRepository
+                .findByUserIdAndIsActiveTrue(userId.get())
+                .map(Optional::of)
+                .switchIfEmpty(Mono.just(Optional.empty()))
+        ).orElse(Mono.just(Optional.empty()));
 
         return monoProducts.zipWith(monoCart)
             .flatMap(tuple -> {

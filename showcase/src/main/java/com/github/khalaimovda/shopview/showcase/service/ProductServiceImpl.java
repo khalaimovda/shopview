@@ -4,6 +4,7 @@ import com.github.khalaimovda.shopview.showcase.dto.ProductCreateForm;
 import com.github.khalaimovda.shopview.showcase.dto.ProductDetail;
 import com.github.khalaimovda.shopview.showcase.dto.ProductListItem;
 import com.github.khalaimovda.shopview.showcase.mapper.ProductMapper;
+import com.github.khalaimovda.shopview.showcase.model.Order;
 import com.github.khalaimovda.shopview.showcase.model.OrderProduct;
 import com.github.khalaimovda.shopview.showcase.repository.OrderProductRepository;
 import com.github.khalaimovda.shopview.showcase.repository.OrderRepository;
@@ -21,6 +22,7 @@ import reactor.core.publisher.Mono;
 
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -35,14 +37,14 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
 //    @Transactional(readOnly = true)
-    public Mono<Page<ProductListItem>> getAllProducts(String contentSubstring, Pageable pageable) {
+    public Mono<Page<ProductListItem>> getAllProducts(String contentSubstring, Pageable pageable, Optional<Long> userId) {
         // We do not use cache here (because of page), we use it in ProductCacheService
         int limit = pageable.getPageSize();
         long offset = pageable.getOffset();
 
         Mono<Integer> total = productCacheService.countProducts(contentSubstring, contentSubstring);
         Mono<List<ProductListItem>> products = productCacheService.getProductItems(
-            contentSubstring, contentSubstring, limit, offset);
+            contentSubstring, contentSubstring, limit, offset, userId);
 
         return products.zipWith(total)
             .map(tuple -> new PageImpl<>(tuple.getT1(), pageable, tuple.getT2()));
@@ -60,16 +62,19 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
-    @Cacheable(value = "products", key = "#id")
-    public Mono<ProductDetail> getProductDetailById(Long id, Long userId) {
+    @Cacheable(value = "products", key = "#id + ':' + (#userId.isPresent() ? #userId.get() : 'null')")
+    public Mono<ProductDetail> getProductDetailById(Long id, Optional<Long> userId) {
         return productRepository
             .findById(id)
             .switchIfEmpty(Mono.error(new NoSuchElementException(String.format("Product with id %s not found", id))))
             .flatMap(
                 product -> {
                     String imageSrcPath = imageService.getImageSrcPath(product.getImagePath());
-                    return orderRepository
-                        .findByUserIdAndIsActiveTrue(userId)
+                    Mono<Order> monoCart = userId
+                        .map(orderRepository::findByUserIdAndIsActiveTrue)
+                        .orElse(Mono.empty());
+
+                    return monoCart
                         .flatMap(
                             cart -> orderProductRepository
                                 .findByOrderIdAndProductId(cart.getId(), product.getId())

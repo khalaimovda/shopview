@@ -2,6 +2,7 @@ package com.github.khalaimovda.shopview.showcase.controller;
 
 
 import com.github.khalaimovda.shopview.showcase.dto.ProductCreateForm;
+import com.github.khalaimovda.shopview.showcase.security.AuthenticatedUser;
 import com.github.khalaimovda.shopview.showcase.service.ProductService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
@@ -11,11 +12,14 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Mono;
+
+import java.util.Optional;
 
 @Controller
 @RequestMapping("/products")
@@ -28,13 +32,14 @@ public class ProductController {
     @GetMapping("")
     public Mono<String> getAllProducts(
         Model model,
+        @AuthenticationPrincipal AuthenticatedUser user,
         @RequestParam(value = "page", defaultValue = "0") int page,
         @RequestParam(value = "size", defaultValue = "10") int size,
         @RequestParam(value = "search", defaultValue = "") String search
     ) {
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "id"));
         return productService
-            .getAllProducts(search, pageable)
+            .getAllProducts(search, pageable, Optional.ofNullable(user).map(AuthenticatedUser::getId))
             .doOnNext(productPage -> model.addAttribute("page", productPage))
             .thenReturn("products");
     }
@@ -45,12 +50,15 @@ public class ProductController {
         return productService.createProduct(form);
     }
 
-    @GetMapping("/{id}")
-    public Mono<String> getProductById(Model model, @PathVariable("id") @Min(1L) Long id) {
+    @GetMapping("/{productId}")
+    public Mono<String> getProductById(
+        Model model,
+        @AuthenticationPrincipal AuthenticatedUser user,
+        @PathVariable("productId") @Min(1L) Long productId
+    ) {
         return productService
-            .getProductById(id)
+            .getProductDetailById(productId, Optional.ofNullable(user).map(AuthenticatedUser::getId))
             .doOnNext(product -> model.addAttribute("product", product))
             .thenReturn("product");
     }
-
 }

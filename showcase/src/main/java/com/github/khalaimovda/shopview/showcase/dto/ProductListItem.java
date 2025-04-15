@@ -1,6 +1,7 @@
 package com.github.khalaimovda.shopview.showcase.dto;
 
 
+import jakarta.annotation.Nullable;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
@@ -25,7 +26,7 @@ public class ProductListItem {
     @DecimalMin("0.01")
     private BigDecimal price;
 
-    @NotNull
+    @Nullable
     @Min(0)
     private Integer count;
 }
