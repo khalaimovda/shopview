@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.8.xsd">
+
+    <changeSet id="1" author="khalaimovda">
+        <preConditions onFail="HALT">
+            <and>
+                <tableExists tableName="users" />
+                <not>
+                    <tableExists tableName="balance" />
+                </not>
+                <dbms type="postgresql"/>
+            </and>
+        </preConditions>
+        <createTable tableName="balance">
+            <column name="id" type="bigint" autoIncrement="true">>
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="user_id" type="bigint">
+                <constraints nullable="false" foreignKeyName=""/>
+            </column>
+            <column name="balance" type="decimal(10,2)">
+                <constraints nullable="false" checkConstraint="balance >= 0"/>
+            </column>
+        </createTable>
+        <addForeignKeyConstraint
+                constraintName="fk_balance_user"
+                baseTableName="balance"
+                baseColumnNames="user_id"
+                referencedTableName="users"
+                referencedColumnNames="id"
+                onDelete="CASCADE"
+        />
+        <rollback>
+            <dropTable tableName="balance"/>
+        </rollback>
+    </changeSet>
+    <!-- <constraints checkConstraint="balance >= 0"/> doesn't work -->
+    <changeSet id="2" author="khalaimovda">
+        <preConditions onFail="HALT">
+            <and>
+                <tableExists tableName="balance" />
+                <dbms type="postgresql"/>
+            </and>
+        </preConditions>
+        <sql>
+            ALTER TABLE balance
+            ADD CONSTRAINT check_balance_not_negative CHECK (balance >= 0);
+        </sql>
+        <rollback>
+            <sql>
+                ALTER TABLE balance
+                DROP CONSTRAINT check_balance_not_negative;
+            </sql>
+        </rollback>
+    </changeSet>
+</databaseChangeLog>

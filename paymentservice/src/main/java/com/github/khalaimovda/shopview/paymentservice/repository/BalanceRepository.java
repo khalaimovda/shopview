@@ -1,12 +1,12 @@
 package com.github.khalaimovda.shopview.paymentservice.repository;
 
-import com.github.khalaimovda.shopview.paymentservice.domain.Balance;
+import com.github.khalaimovda.shopview.paymentservice.model.Balance;
+import org.springframework.data.repository.reactive.ReactiveCrudRepository;
+import org.springframework.stereotype.Repository;
 import reactor.core.publisher.Mono;
 
-import java.math.BigDecimal;
 
-
-public interface BalanceRepository {
-    Mono<Balance> getBalance();
-    Mono<Balance> updateBalance(BigDecimal amount);
+@Repository
+public interface BalanceRepository extends ReactiveCrudRepository<Balance, Long> {
+    Mono<Balance> findByUserId(Long userId);
 }

@@ -25,6 +25,8 @@ spring:
   liquibase:
     enabled: true
     change-log: "classpath:/db/changelog/db.changelog-master.xml"
+    database-change-log-table: showcase_databasechangelog
+    database-change-log-lock-table: showcase_databasechangeloglock
     url: jdbc:postgresql://localhost:5432/shop
     user: username
     password: password

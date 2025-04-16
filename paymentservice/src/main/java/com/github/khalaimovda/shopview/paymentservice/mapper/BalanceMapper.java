@@ -1,6 +1,6 @@
 package com.github.khalaimovda.shopview.paymentservice.mapper;
 
-import com.github.khalaimovda.shopview.paymentservice.domain.Balance;
+import com.github.khalaimovda.shopview.paymentservice.model.Balance;
 import com.github.khalaimovda.shopview.paymentservice.domain.PaymentSuccessResponse;
 import org.mapstruct.Mapper;
 import org.mapstruct.ReportingPolicy;
