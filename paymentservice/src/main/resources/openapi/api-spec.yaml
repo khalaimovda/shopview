@@ -25,6 +25,23 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Balance'
+    post:
+      summary: Add balance
+      description: Create user balance if it does not exist and add amount in his balance
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AddBalanceRequest'
+      responses:
+        '200':
+          description: Balance is successfully replenished
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Balance'
+
   /api/payments:
     post:
       summary: Make payment
@@ -59,6 +76,22 @@ components:
           format: decimal
           x-java-type: java.math.BigDecimal
           example: 128.83
+
+    AddBalanceRequest:
+      type: object
+      required:
+        - userId
+        - amount
+      properties:
+        userId:
+          type: integer
+          format: int64
+          example: 13
+        amount:
+          type: number
+          format: decimal
+          x-java-type: java.math.BigDecimal
+          example: 44.15
 
     PaymentRequest:
       type: object

@@ -35,4 +35,22 @@ public class BalanceServiceImpl implements BalanceService {
                 }
             );
     }
+
+    @Override
+    public Mono<Balance> addBalance(long userId, BigDecimal amount) {
+        return repository
+            .findByUserId(userId)
+            .switchIfEmpty(Mono.fromSupplier(() -> {
+                    var balance = new com.github.khalaimovda.shopview.paymentservice.model.Balance();
+                    balance.setId(userId);
+                    balance.setBalance(BigDecimal.ZERO);
+                    return balance;
+                })
+            )
+            .flatMap(balance -> {
+                    balance.setBalance(balance.getBalance().add(amount));
+                    return repository.save(balance);
+                }
+            );
+    }
 }

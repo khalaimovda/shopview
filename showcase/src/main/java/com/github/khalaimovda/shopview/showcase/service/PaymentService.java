@@ -7,5 +7,6 @@ import java.math.BigDecimal;
 
 public interface PaymentService {
     Mono<Balance> getBalance(long userId);
+    Mono<Balance> addBalance(long userId, BigDecimal amount);
     Mono<Balance> makePayment(long userId, BigDecimal amount);
 }

@@ -8,4 +8,5 @@ import java.math.BigDecimal;
 public interface BalanceService {
     Mono<Balance> getBalance(long userId);
     Mono<Balance> decreaseBalance(long userId, BigDecimal amount);
+    Mono<Balance> addBalance(long userId, BigDecimal amount);
 }
