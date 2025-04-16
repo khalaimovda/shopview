@@ -88,7 +88,7 @@ public class CartServiceImpl implements CartService {
                         return Mono.error(new IllegalStateException("Cart is empty"));
                     }
                     return paymentService
-                        .makePayment(totalPrice)
+                        .makePayment(userId, totalPrice)
                         .then(Mono.just(cart));
                 })
             )

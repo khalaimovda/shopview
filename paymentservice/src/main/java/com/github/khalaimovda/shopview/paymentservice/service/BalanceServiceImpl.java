@@ -1,6 +1,7 @@
 package com.github.khalaimovda.shopview.paymentservice.service;
 
 import com.github.khalaimovda.shopview.paymentservice.exception.InsufficientFundsException;
+import com.github.khalaimovda.shopview.paymentservice.exception.UserBalanceNotFoundException;
 import com.github.khalaimovda.shopview.paymentservice.model.Balance;
 import com.github.khalaimovda.shopview.paymentservice.repository.BalanceRepository;
 import lombok.RequiredArgsConstructor;
@@ -24,7 +25,7 @@ public class BalanceServiceImpl implements BalanceService {
     public Mono<Balance> decreaseBalance(long userId, BigDecimal amount) {
         return repository
             .findByUserId(userId)
-            .switchIfEmpty(Mono.error(new IllegalArgumentException("User with id " + userId + " is not found")))
+            .switchIfEmpty(Mono.error(new UserBalanceNotFoundException(userId)))
             .flatMap(balance -> {
                 if (amount.compareTo(balance.getBalance()) > 0) {
                     return Mono.error(new InsufficientFundsException(amount, balance.getBalance()));

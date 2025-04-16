@@ -8,4 +8,5 @@ import org.mapstruct.ReportingPolicy;
 @Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.ERROR)
 public interface BalanceMapper {
     PaymentSuccessResponse toPaymentSuccessResponse(Balance balance);
+    com.github.khalaimovda.shopview.paymentservice.domain.Balance toDomainBalance(Balance balance);
 }

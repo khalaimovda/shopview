@@ -6,6 +6,6 @@ import reactor.core.publisher.Mono;
 import java.math.BigDecimal;
 
 public interface PaymentService {
-    Mono<Balance> getBalance();
-    Mono<Balance> makePayment(BigDecimal amount);
+    Mono<Balance> getBalance(long userId);
+    Mono<Balance> makePayment(long userId, BigDecimal amount);
 }

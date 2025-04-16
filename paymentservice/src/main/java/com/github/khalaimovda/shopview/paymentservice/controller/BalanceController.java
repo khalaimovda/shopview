@@ -8,11 +8,14 @@ import com.github.khalaimovda.shopview.paymentservice.domain.PaymentSuccessRespo
 import com.github.khalaimovda.shopview.paymentservice.mapper.BalanceMapper;
 import com.github.khalaimovda.shopview.paymentservice.service.BalanceService;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.enums.ParameterIn;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
@@ -28,10 +31,12 @@ public class BalanceController implements DefaultApi {
 
     @Override
     public Mono<ResponseEntity<Balance>> apiBalanceGet(
+        @NotNull @Parameter(name = "userId", description = "ID of the user", required = true, in = ParameterIn.QUERY) @Valid @RequestParam(value = "userId", required = true) Long userId,
         @Parameter(hidden = true) final ServerWebExchange exchange
     ) {
         return service
-            .getBalance()
+            .getBalance(userId)
+            .map(mapper::toDomainBalance)
             .map(ResponseEntity::ok);
     }
 
@@ -41,7 +46,7 @@ public class BalanceController implements DefaultApi {
         @Parameter(hidden = true) final ServerWebExchange exchange
     ) {
         return paymentRequest
-            .flatMap(pr -> service.decreaseBalance(pr.getAmount()))
+            .flatMap(pr -> service.decreaseBalance(pr.getUserId(), pr.getAmount()))
             .map(mapper::toPaymentSuccessResponse)
             .map(ResponseEntity::ok);
     }

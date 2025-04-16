@@ -23,9 +23,9 @@ public class PaymentServiceImpl implements PaymentService {
     private final PaymentMapper mapper;
 
     @Override
-    public Mono<Balance> getBalance() {
+    public Mono<Balance> getBalance(long userId) {
         return api
-            .apiBalanceGet()
+            .apiBalanceGet(userId)
             .onErrorResume(
                 WebClientRequestException.class,
                 ex -> Mono.error(new PaymentServiceException(
@@ -39,9 +39,9 @@ public class PaymentServiceImpl implements PaymentService {
     }
 
     @Override
-    public Mono<Balance> makePayment(BigDecimal amount) {
+    public Mono<Balance> makePayment(long userId, BigDecimal amount) {
         return api
-            .apiPaymentsPost(new PaymentRequest().amount(amount))
+            .apiPaymentsPost(new PaymentRequest().userId(userId).amount(amount))
             .onErrorResume(
                 WebClientRequestException.class,
                 ex -> Mono.error(new PaymentServiceException(

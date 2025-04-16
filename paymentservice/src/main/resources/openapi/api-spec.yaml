@@ -9,6 +9,15 @@ paths:
   /api/balance:
     get:
       summary: Get current balance
+      parameters:
+        - name: userId
+          in: query
+          required: true
+          schema:
+            type: integer
+            format: int64
+            example: 13
+          description: ID of the user
       responses:
         '200':
           description: Successful response
@@ -54,8 +63,13 @@ components:
     PaymentRequest:
       type: object
       required:
+        - userId
         - amount
       properties:
+        userId:
+          type: integer
+          format: int64
+          example: 13
         amount:
           type: number
           format: decimal
