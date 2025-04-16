@@ -42,7 +42,7 @@ public class BalanceServiceImpl implements BalanceService {
             .findByUserId(userId)
             .switchIfEmpty(Mono.fromSupplier(() -> {
                     var balance = new com.github.khalaimovda.shopview.paymentservice.model.Balance();
-                    balance.setId(userId);
+                    balance.setUserId(userId);
                     balance.setBalance(BigDecimal.ZERO);
                     return balance;
                 })

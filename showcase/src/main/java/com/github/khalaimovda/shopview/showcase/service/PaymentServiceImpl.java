@@ -1,5 +1,6 @@
 package com.github.khalaimovda.shopview.showcase.service;
 
+import com.github.khalaimovda.shopview.showcase.domain.AddBalanceRequest;
 import com.github.khalaimovda.shopview.showcase.exception.PaymentServiceException;
 import com.github.khalaimovda.shopview.showcase.mapper.PaymentMapper;
 import com.github.khalaimovda.shopview.showcase.api.DefaultApi;
@@ -36,6 +37,23 @@ public class PaymentServiceImpl implements PaymentService {
             .onErrorResume(
                 WebClientResponseException.class,
                 ex -> Mono.error(new PaymentServiceException(ex.getStatusCode(), ex.getMessage())));
+    }
+
+    @Override
+    public Mono<Balance> addBalance(long userId, BigDecimal amount) {
+        return api
+            .apiBalancePost(new AddBalanceRequest().userId(userId).amount(amount))
+            .onErrorResume(
+                WebClientRequestException.class,
+                ex -> Mono.error(new PaymentServiceException(
+                    HttpStatus.INTERNAL_SERVER_ERROR,
+                    "Payment service request problems: " + ex.getMessage())
+                )
+            )
+            .onErrorResume(
+                WebClientResponseException.class,
+                ex -> Mono.error(new PaymentServiceException(ex.getStatusCode(), ex.getMessage()))
+            );
     }
 
     @Override

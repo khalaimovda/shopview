@@ -25,7 +25,7 @@ public class UserServiceImpl implements UserService {
     private final PaymentService paymentService;
 
     @Value("${app.payment-service.default-balance}")
-    private final BigDecimal defaultBalance;
+    private BigDecimal defaultBalance;
 
     @Override
     @Secured("ROLE_ADMIN")
