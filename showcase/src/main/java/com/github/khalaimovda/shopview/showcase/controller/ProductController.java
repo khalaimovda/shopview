@@ -46,7 +46,7 @@ public class ProductController {
     }
 
     @PostMapping(path = "", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    @PreAuthorize("isAuthenticated() and hasRole('ROLE_ADMIN')")
+    @PreAuthorize("isAuthenticated() and hasRole('ADMIN')")
     @ResponseStatus(HttpStatus.CREATED)
     public Mono<Void> createProduct(@Valid @ModelAttribute ProductCreateForm form) {
         return productService.createProduct(form);

@@ -8,6 +8,8 @@ import com.github.khalaimovda.shopview.showcase.repository.ProductRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.test.web.reactive.server.SecurityMockServerConfigurers;
 import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 
 import java.math.BigDecimal;
@@ -34,8 +36,10 @@ public class OrderControllerIntegrationTest extends AbstractIntegrationTest {
         Long orderId = orderRepository.findById(1L).block().getId();
         OrderWithProducts order = orderRepository.findOrderWithProductsById(orderId).block();
         BigDecimal totalPrice = calculateOrderPrice(order);
+        Authentication auth = createAuthentication(ordinaryUser);
 
-        webTestClient.get()
+        webTestClient.mutateWith(SecurityMockServerConfigurers.mockAuthentication(auth))
+            .get()
             .uri("/orders")
             .exchange()
             .expectStatus().isOk()
@@ -52,23 +56,36 @@ public class OrderControllerIntegrationTest extends AbstractIntegrationTest {
     }
 
     @Test
+    void testGetAllOrdersAnonymousShouldBeRedirectedToLogin() {
+        webTestClient
+            .get()
+            .uri("/orders")
+            .exchange()
+            .expectStatus().is3xxRedirection()
+            .expectHeader().valueMatches("Location", ".*/login");
+    }
+
+    @Test
     void testGetAllOrdersCached() throws Exception {
+        Authentication auth = createAuthentication(ordinaryUser);
         for (int i = 0; i < 15; i++) {
-            webTestClient.get()
+            webTestClient.mutateWith(SecurityMockServerConfigurers.mockAuthentication(auth))
+                .get()
                 .uri("/orders")
                 .exchange()
                 .expectStatus().isOk();
         }
-        verify(orderRepository, times(1)).findAllPlacedOrdersWithProducts();
+        verify(orderRepository, times(1)).findAllPlacedOrdersWithProducts(ordinaryUser.getId());
 
         // Wait until TTL is expired
         TimeUnit.SECONDS.sleep(2L);
 
-        webTestClient.get()
+        webTestClient.mutateWith(SecurityMockServerConfigurers.mockAuthentication(auth))
+            .get()
             .uri("/orders")
             .exchange()
             .expectStatus().isOk();
-        verify(orderRepository, times(2)).findAllPlacedOrdersWithProducts();
+        verify(orderRepository, times(2)).findAllPlacedOrdersWithProducts(ordinaryUser.getId());
     }
 
     @Test
@@ -76,8 +93,10 @@ public class OrderControllerIntegrationTest extends AbstractIntegrationTest {
         Long orderId = orderRepository.findById(1L).block().getId();
         OrderWithProducts order = orderRepository.findOrderWithProductsById(orderId).block();
         BigDecimal totalPrice = calculateOrderPrice(order);
+        Authentication auth = createAuthentication(ordinaryUser);
 
-        webTestClient.get()
+        webTestClient.mutateWith(SecurityMockServerConfigurers.mockAuthentication(auth))
+            .get()
             .uri("/orders/" + orderId)
             .exchange()
             .expectStatus().isOk()
@@ -96,11 +115,23 @@ public class OrderControllerIntegrationTest extends AbstractIntegrationTest {
     }
 
     @Test
+    void testGetOrderByIdAnonymousShouldBeRedirectedToLogin() {
+        webTestClient
+            .get()
+            .uri("/orders/" + 1L)
+            .exchange()
+            .expectStatus().is3xxRedirection()
+            .expectHeader().valueMatches("Location", ".*/login");
+    }
+
+    @Test
     void testGetOrderByIdCached() throws Exception {
         Long orderId = 1L;
+        Authentication auth = createAuthentication(ordinaryUser);
 
         for (int i = 0; i < 15; i++) {
-            webTestClient.get()
+            webTestClient.mutateWith(SecurityMockServerConfigurers.mockAuthentication(auth))
+                .get()
                 .uri("/orders/" + orderId)
                 .exchange()
                 .expectStatus().isOk();
@@ -110,7 +141,8 @@ public class OrderControllerIntegrationTest extends AbstractIntegrationTest {
         // Wait until TTL is expired
         TimeUnit.SECONDS.sleep(2L);
 
-        webTestClient.get()
+        webTestClient.mutateWith(SecurityMockServerConfigurers.mockAuthentication(auth))
+            .get()
             .uri("/orders/" + orderId)
             .exchange()
             .expectStatus().isOk();

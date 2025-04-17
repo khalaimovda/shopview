@@ -14,6 +14,8 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.test.web.reactive.server.SecurityMockServerConfigurers;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 import reactor.core.publisher.Mono;
@@ -44,7 +46,10 @@ public class CartControllerIntegrationTest extends AbstractIntegrationTest {
 
     @Test
     void testGetCart() {
-        webTestClient.get()
+        Authentication auth = createAuthentication(ordinaryUser);
+
+        webTestClient.mutateWith(SecurityMockServerConfigurers.mockAuthentication(auth))
+            .get()
             .uri("/cart")
             .exchange()
             .expectStatus().isOk()
@@ -76,36 +81,52 @@ public class CartControllerIntegrationTest extends AbstractIntegrationTest {
     }
 
     @Test
+    void testGetCartAnonymousShouldBeRedirectedToLogin() {
+        webTestClient
+            .get()
+            .uri("/cart")
+            .exchange()
+            .expectStatus().is3xxRedirection()
+            .expectHeader().valueMatches("Location", ".*/login");
+    }
+
+    @Test
     void testGetCartCached() throws InterruptedException {
+        Authentication auth = createAuthentication(ordinaryUser);
+
         for (int i = 0; i < 15; i++) {
-            webTestClient.get()
+            webTestClient.mutateWith(SecurityMockServerConfigurers.mockAuthentication(auth))
+                .get()
                 .uri("/cart")
                 .exchange()
                 .expectStatus().isOk();
         }
-        verify(orderRepository, times(1)).findByIsActiveTrue();
+        verify(orderRepository, times(1)).findByUserIdAndIsActiveTrue(ordinaryUser.getId());
 
         // Wait until TTL is expired
         TimeUnit.SECONDS.sleep(2L);
 
-        webTestClient.get()
+        webTestClient.mutateWith(SecurityMockServerConfigurers.mockAuthentication(auth))
+            .get()
             .uri("/cart")
             .exchange()
             .expectStatus().isOk();
-        verify(orderRepository, times(2)).findByIsActiveTrue();
+        verify(orderRepository, times(2)).findByUserIdAndIsActiveTrue(ordinaryUser.getId());
     }
-
 
     @Test
     void testAddNewProductToCart() {
+        Authentication auth = createAuthentication(ordinaryUser);
         long productId = 1L;
 
-        webTestClient.post()
+        webTestClient.mutateWith(SecurityMockServerConfigurers.mockAuthentication(auth))
+            .mutateWith(SecurityMockServerConfigurers.csrf())
+            .post()
             .uri("/cart/add/" + productId)
             .exchange()
             .expectStatus().isOk();
 
-        Order cart = orderRepository.findByIsActiveTrue().block();
+        Order cart = orderRepository.findByUserIdAndIsActiveTrue(ordinaryUser.getId()).block();
         Product product = productRepository.findById(productId).block();
         OrderProduct orderProduct = orderProductRepository
             .findByOrderIdAndProductId(cart.getId(), product.getId()).block();
@@ -116,37 +137,71 @@ public class CartControllerIntegrationTest extends AbstractIntegrationTest {
     }
 
     @Test
-    void testAddNewProductToCartInvalidCache() {
-        webTestClient.get()
-            .uri("/cart")
-            .exchange()
-            .expectStatus().isOk();
-        verify(orderRepository, times(1)).findByIsActiveTrue();
+    void testAddNewProductToCartAnonymousShouldBeRedirectedToLogin() {
+        long productId = 1L;
 
-        // Add new post into cart
-        webTestClient.post()
-            .uri("/cart/add/" + 1)
+        webTestClient.mutateWith(SecurityMockServerConfigurers.csrf())
+            .post()
+            .uri("/cart/add/" + productId)
             .exchange()
-            .expectStatus().isOk();
-        verify(orderRepository, times(2)).findByIsActiveTrue();
-        // After this cache must be invalidated
-
-        webTestClient.get()
-            .uri("/cart")
-            .exchange()
-            .expectStatus().isOk();
-        verify(orderRepository, times(3)).findByIsActiveTrue();
+            .expectStatus().is3xxRedirection()
+            .expectHeader().valueMatches("Location", ".*/login");
     }
 
     @Test
+    void testAddNewProductToCartForbiddenWithoutCsrf() {
+        Authentication auth = createAuthentication(ordinaryUser);
+        long productId = 1L;
+
+        webTestClient.mutateWith(SecurityMockServerConfigurers.mockAuthentication(auth))
+            .post()
+            .uri("/cart/add/" + productId)
+            .exchange()
+            .expectStatus().isForbidden();
+    }
+
+
+    @Test
+    void testAddNewProductToCartInvalidCache() {
+        Authentication auth = createAuthentication(ordinaryUser);
+
+        webTestClient.mutateWith(SecurityMockServerConfigurers.mockAuthentication(auth))
+            .get()
+            .uri("/cart")
+            .exchange()
+            .expectStatus().isOk();
+        verify(orderRepository, times(1)).findByUserIdAndIsActiveTrue(ordinaryUser.getId());
+
+        // Add new post into cart
+        webTestClient.mutateWith(SecurityMockServerConfigurers.mockAuthentication(auth))
+            .mutateWith(SecurityMockServerConfigurers.csrf())
+            .post()
+            .uri("/cart/add/" + 1)
+            .exchange()
+            .expectStatus().isOk();
+        verify(orderRepository, times(2)).findByUserIdAndIsActiveTrue(ordinaryUser.getId());
+        // After this cache must be invalidated
+
+        webTestClient.mutateWith(SecurityMockServerConfigurers.mockAuthentication(auth))
+            .get()
+            .uri("/cart")
+            .exchange()
+            .expectStatus().isOk();
+        verify(orderRepository, times(3)).findByUserIdAndIsActiveTrue(ordinaryUser.getId());
+    }
+    @Test
     void testAddExistingProductToCart() {
+        Authentication auth = createAuthentication(ordinaryUser);
         long productId = 13L;
-        Order cart = orderRepository.findByIsActiveTrue().block();
+
+        Order cart = orderRepository.findByUserIdAndIsActiveTrue(ordinaryUser.getId()).block();
         Product product = productRepository.findById(productId).block();
         int prevCount = orderProductRepository
             .findByOrderIdAndProductId(cart.getId(), product.getId()).block().getCount();
 
-        webTestClient.post()
+        webTestClient.mutateWith(SecurityMockServerConfigurers.mockAuthentication(auth))
+            .mutateWith(SecurityMockServerConfigurers.csrf())
+            .post()
             .uri("/cart/add/" + productId)
             .exchange()
             .expectStatus().isOk();
@@ -158,13 +213,17 @@ public class CartControllerIntegrationTest extends AbstractIntegrationTest {
 
     @Test
     void testDecreaseProductInCartCountMoreThanOne() {
+        Authentication auth = createAuthentication(ordinaryUser);
         long productId = 13L;
-        Order cart = orderRepository.findByIsActiveTrue().block();
+
+        Order cart = orderRepository.findByUserIdAndIsActiveTrue(ordinaryUser.getId()).block();
         Product product = productRepository.findById(productId).block();
         int prevCount = orderProductRepository
             .findByOrderIdAndProductId(cart.getId(), product.getId()).block().getCount();
 
-        webTestClient.post()
+        webTestClient.mutateWith(SecurityMockServerConfigurers.mockAuthentication(auth))
+            .mutateWith(SecurityMockServerConfigurers.csrf())
+            .post()
             .uri("/cart/decrease/" + productId)
             .exchange()
             .expectStatus().isOk();
@@ -176,22 +235,24 @@ public class CartControllerIntegrationTest extends AbstractIntegrationTest {
 
     @Test
     void testDecreaseProductInCartCountOneThenRemove() {
+        Authentication auth = createAuthentication(ordinaryUser);
         long productId = 13L;
-        Order cart = orderRepository.findByIsActiveTrue().block();
+
+        Order cart = orderRepository.findByUserIdAndIsActiveTrue(ordinaryUser.getId()).block();
         Product product = productRepository.findById(productId).block();
 
-        // Set count to 1
         OrderProduct orderProduct = orderProductRepository
             .findByOrderIdAndProductId(cart.getId(), product.getId()).block();
         orderProduct.setCount(1);
         orderProductRepository.save(orderProduct).block();
 
-        webTestClient.post()
+        webTestClient.mutateWith(SecurityMockServerConfigurers.mockAuthentication(auth))
+            .mutateWith(SecurityMockServerConfigurers.csrf())
+            .post()
             .uri("/cart/decrease/" + productId)
             .exchange()
             .expectStatus().isOk();
 
-        // This product must be removed from cart
         StepVerifier
             .create(orderProductRepository.findByOrderIdAndProductId(cart.getId(), product.getId()))
             .verifyComplete();
@@ -199,41 +260,47 @@ public class CartControllerIntegrationTest extends AbstractIntegrationTest {
 
     @Test
     void testDecreaseProductInCartInvalidCache() {
+        Authentication auth = createAuthentication(ordinaryUser);
         long productId = 13L;
 
-        webTestClient.get()
+        webTestClient.mutateWith(SecurityMockServerConfigurers.mockAuthentication(auth))
+            .get()
             .uri("/cart")
             .exchange()
             .expectStatus().isOk();
-        verify(orderRepository, times(1)).findByIsActiveTrue();
+        verify(orderRepository, times(1)).findByUserIdAndIsActiveTrue(ordinaryUser.getId());
 
-        // Decrease product count in cart
-        webTestClient.post()
+        webTestClient.mutateWith(SecurityMockServerConfigurers.mockAuthentication(auth))
+            .mutateWith(SecurityMockServerConfigurers.csrf())
+            .post()
             .uri("/cart/decrease/" + productId)
             .exchange()
             .expectStatus().isOk();
-        verify(orderRepository, times(2)).findByIsActiveTrue();
-        // After this cache must be invalidated
+        verify(orderRepository, times(2)).findByUserIdAndIsActiveTrue(ordinaryUser.getId());
 
-        webTestClient.get()
+        webTestClient.mutateWith(SecurityMockServerConfigurers.mockAuthentication(auth))
+            .get()
             .uri("/cart")
             .exchange()
             .expectStatus().isOk();
-        verify(orderRepository, times(3)).findByIsActiveTrue();
+        verify(orderRepository, times(3)).findByUserIdAndIsActiveTrue(ordinaryUser.getId());
     }
 
     @Test
     void testRemoveProductFromCart() {
+        Authentication auth = createAuthentication(ordinaryUser);
         long productId = 13L;
-        Order cart = orderRepository.findByIsActiveTrue().block();
+
+        Order cart = orderRepository.findByUserIdAndIsActiveTrue(ordinaryUser.getId()).block();
         Product product = productRepository.findById(productId).block();
 
-        webTestClient.delete()
+        webTestClient.mutateWith(SecurityMockServerConfigurers.mockAuthentication(auth))
+            .mutateWith(SecurityMockServerConfigurers.csrf())
+            .delete()
             .uri("/cart/remove/" + productId)
             .exchange()
             .expectStatus().isOk();
 
-        // This product must be removed from cart
         StepVerifier
             .create(orderProductRepository.findByOrderIdAndProductId(cart.getId(), product.getId()))
             .verifyComplete();
@@ -241,45 +308,51 @@ public class CartControllerIntegrationTest extends AbstractIntegrationTest {
 
     @Test
     void testRemoveProductFromCartInvalidCache() {
+        Authentication auth = createAuthentication(ordinaryUser);
         long productId = 13L;
 
-        webTestClient.get()
+        webTestClient.mutateWith(SecurityMockServerConfigurers.mockAuthentication(auth))
+            .get()
             .uri("/cart")
             .exchange()
             .expectStatus().isOk();
-        verify(orderRepository, times(1)).findByIsActiveTrue();
+        verify(orderRepository, times(1)).findByUserIdAndIsActiveTrue(ordinaryUser.getId());
 
-        // Remove product from cart
-        webTestClient.delete()
+        webTestClient.mutateWith(SecurityMockServerConfigurers.mockAuthentication(auth))
+            .mutateWith(SecurityMockServerConfigurers.csrf())
+            .delete()
             .uri("/cart/remove/" + productId)
             .exchange()
             .expectStatus().isOk();
-        verify(orderRepository, times(2)).findByIsActiveTrue();
-        // After this cache must be invalidated
+        verify(orderRepository, times(2)).findByUserIdAndIsActiveTrue(ordinaryUser.getId());
 
-        webTestClient.get()
+        webTestClient.mutateWith(SecurityMockServerConfigurers.mockAuthentication(auth))
+            .get()
             .uri("/cart")
             .exchange()
             .expectStatus().isOk();
-        verify(orderRepository, times(3)).findByIsActiveTrue();
+        verify(orderRepository, times(3)).findByUserIdAndIsActiveTrue(ordinaryUser.getId());
     }
 
     @Test
     void testCheckout() {
-        Order cart = orderRepository.findByIsActiveTrue().block();
+        Authentication auth = createAuthentication(ordinaryUser);
+        Order cart = orderRepository.findByUserIdAndIsActiveTrue(ordinaryUser.getId()).block();
         long orderId = cart.getId();
         OrderWithProducts orderWithProducts = orderRepository.findOrderWithProductsById(orderId).block();
         BigDecimal totalPrice = calculateOrderPrice(orderWithProducts);
 
-        when(paymentService.makePayment(any(BigDecimal.class)))
+        when(paymentService.makePayment(anyLong(), any(BigDecimal.class)))
             .thenReturn(Mono.just(new Balance().balance(BigDecimal.TWO)));
 
-        webTestClient.post()
+        webTestClient.mutateWith(SecurityMockServerConfigurers.mockAuthentication(auth))
+            .mutateWith(SecurityMockServerConfigurers.csrf())
+            .post()
             .uri("/cart/checkout")
             .exchange()
             .expectStatus().isOk();
 
-        verify(paymentService, times(1)).makePayment(totalPrice);
+        verify(paymentService, times(1)).makePayment(ordinaryUser.getId(), totalPrice);
 
         Order order = orderRepository.findById(orderId).block();
         assertFalse(order.getIsActive());
@@ -287,50 +360,56 @@ public class CartControllerIntegrationTest extends AbstractIntegrationTest {
 
     @Test
     void testCheckoutInvalidCache() {
-        when(paymentService.makePayment(any(BigDecimal.class)))
+        Authentication auth = createAuthentication(ordinaryUser);
+
+        when(paymentService.makePayment(anyLong(), any(BigDecimal.class)))
             .thenReturn(Mono.just(new Balance().balance(BigDecimal.TWO)));
 
-        webTestClient.get()
+        webTestClient.mutateWith(SecurityMockServerConfigurers.mockAuthentication(auth))
+            .get()
             .uri("/cart")
             .exchange()
             .expectStatus().isOk();
-        verify(orderRepository, times(1)).findByIsActiveTrue();
+        verify(orderRepository, times(1)).findByUserIdAndIsActiveTrue(ordinaryUser.getId());
 
-        // Remove product from cart
-        webTestClient.post()
+        webTestClient.mutateWith(SecurityMockServerConfigurers.mockAuthentication(auth))
+            .mutateWith(SecurityMockServerConfigurers.csrf())
+            .post()
             .uri("/cart/checkout")
             .exchange()
             .expectStatus().isOk();
-        verify(orderRepository, times(2)).findByIsActiveTrue();
-        // After this cache must be invalidated
+        verify(orderRepository, times(2)).findByUserIdAndIsActiveTrue(ordinaryUser.getId());
 
-        webTestClient.get()
+        webTestClient.mutateWith(SecurityMockServerConfigurers.mockAuthentication(auth))
+            .get()
             .uri("/cart")
             .exchange()
             .expectStatus().isOk();
-        verify(orderRepository, times(3)).findByIsActiveTrue();
+        verify(orderRepository, times(3)).findByUserIdAndIsActiveTrue(ordinaryUser.getId());
     }
 
     @Test
     void testCheckoutInsufficientFunds() {
-        Order cart = orderRepository.findByIsActiveTrue().block();
+        Authentication auth = createAuthentication(ordinaryUser);
+
+        Order cart = orderRepository.findByUserIdAndIsActiveTrue(ordinaryUser.getId()).block();
         long orderId = cart.getId();
         OrderWithProducts orderWithProducts = orderRepository.findOrderWithProductsById(orderId).block();
         BigDecimal totalPrice = calculateOrderPrice(orderWithProducts);
         BigDecimal availableBalance = totalPrice.subtract(BigDecimal.ONE);
 
-        when(paymentService.makePayment(any(BigDecimal.class)))
-            .thenReturn(Mono.just(new Balance().balance(BigDecimal.TWO)));
+        when(paymentService.makePayment(anyLong(), any(BigDecimal.class)))
+            .thenReturn(Mono.error(new InsufficientFundsException(
+                HttpStatus.BAD_REQUEST, "Not enough funds to complete transaction", totalPrice, availableBalance)));
 
-        when(paymentService.makePayment(any(BigDecimal.class))).thenReturn(Mono.error(new InsufficientFundsException(
-            HttpStatus.BAD_REQUEST, "Not enough funds to complete transaction", totalPrice, availableBalance)));
-
-        webTestClient.post()
+        webTestClient.mutateWith(SecurityMockServerConfigurers.mockAuthentication(auth))
+            .mutateWith(SecurityMockServerConfigurers.csrf())
+            .post()
             .uri("/cart/checkout")
             .exchange()
             .expectStatus().isBadRequest();
 
-        verify(paymentService, times(1)).makePayment(totalPrice);
+        verify(paymentService, times(1)).makePayment(ordinaryUser.getId(), totalPrice);
 
         Order order = orderRepository.findById(orderId).block();
         assertTrue(order.getIsActive());

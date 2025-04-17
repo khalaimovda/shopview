@@ -8,6 +8,7 @@ dependencies {
 	testImplementation 'org.testcontainers:postgresql'
 	testImplementation 'com.redis:testcontainers-redis:2.2.2'
 	testImplementation 'org.testcontainers:r2dbc'
+	testImplementation 'org.springframework.security:spring-security-test'
 }
 
 openApiGenerate {

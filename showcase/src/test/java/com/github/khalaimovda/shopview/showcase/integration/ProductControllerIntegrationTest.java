@@ -7,6 +7,8 @@ import org.junit.jupiter.api.Test;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.MediaType;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.test.web.reactive.server.SecurityMockServerConfigurers;
 import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 import org.springframework.web.reactive.function.BodyInserters;
 import reactor.test.StepVerifier;
@@ -69,8 +71,11 @@ public class ProductControllerIntegrationTest extends AbstractIntegrationTest {
 
     @Test
     public void testGetAllProductsCached() throws InterruptedException {
+        Authentication auth = createAuthentication(ordinaryUser);
+
         for (int i = 0; i < 15; i++) {
-            webTestClient.get()
+            webTestClient.mutateWith(SecurityMockServerConfigurers.mockAuthentication(auth))
+                .get()
                 .uri(builder -> builder
                     .path("/products")
                     .queryParam("page", "0")
@@ -85,12 +90,13 @@ public class ProductControllerIntegrationTest extends AbstractIntegrationTest {
             .countByNameOrDescriptionContaining(eq("searchValue"), eq("searchValue"));
         verify(productRepository, times(1))
             .findByNameOrDescriptionContaining(eq("searchValue"), eq("searchValue"), eq(20), eq(0L));
-        verify(orderRepository, times(1)).findByIsActiveTrue();
+        verify(orderRepository, times(1)).findByUserIdAndIsActiveTrue(ordinaryUser.getId());
 
         // Wait until TTL is expired
         TimeUnit.SECONDS.sleep(2L);
 
-        webTestClient.get()
+        webTestClient.mutateWith(SecurityMockServerConfigurers.mockAuthentication(auth))
+            .get()
             .uri(builder -> builder
                 .path("/products")
                 .queryParam("page", "0")
@@ -104,7 +110,7 @@ public class ProductControllerIntegrationTest extends AbstractIntegrationTest {
             .countByNameOrDescriptionContaining(eq("searchValue"), eq("searchValue"));
         verify(productRepository, times(2))
             .findByNameOrDescriptionContaining(eq("searchValue"), eq("searchValue"), eq(20), eq(0L));
-        verify(orderRepository, times(2)).findByIsActiveTrue();
+        verify(orderRepository, times(2)).findByUserIdAndIsActiveTrue(ordinaryUser.getId());
     }
 
 
@@ -115,7 +121,11 @@ public class ProductControllerIntegrationTest extends AbstractIntegrationTest {
         String imageName = "test-create.jpg";
         BigDecimal productPrice = new BigDecimal("82.13");
 
-        webTestClient.post()
+        Authentication auth = createAuthentication(adminUser);
+
+        webTestClient.mutateWith(SecurityMockServerConfigurers.mockAuthentication(auth))
+            .mutateWith(SecurityMockServerConfigurers.csrf())
+            .post()
             .uri("/products")
             .contentType(MediaType.MULTIPART_FORM_DATA)
             .body(BodyInserters.fromMultipartData("name", productName)
@@ -144,6 +154,87 @@ public class ProductControllerIntegrationTest extends AbstractIntegrationTest {
             .verifyComplete();
     }
 
+    @Test
+    void testCreateProductAnonymousShouldBeRedirectedToLogin() {
+        String productName = "TestName";
+        String productDescription = "TestDescription";
+        String imageName = "test-create.jpg";
+        BigDecimal productPrice = new BigDecimal("82.13");
+
+        webTestClient.mutateWith(SecurityMockServerConfigurers.csrf())
+            .post()
+            .uri("/products")
+            .contentType(MediaType.MULTIPART_FORM_DATA)
+            .body(BodyInserters.fromMultipartData("name", productName)
+                .with("description", productDescription)
+                .with("price", productPrice.toString())
+                .with("image", new HttpEntity<>(
+                    new ByteArrayResource(createRandomBytes()) {
+                        @Override
+                        public String getFilename() {
+                            return imageName;
+                        }
+                    })))
+            .exchange()
+            .expectStatus().is3xxRedirection()
+            .expectHeader().valueMatches("Location", ".*/login");
+    }
+
+    @Test
+    void testCreateProductForbiddenWithoutCsrf() {
+        String productName = "TestName";
+        String productDescription = "TestDescription";
+        String imageName = "test-create.jpg";
+        BigDecimal productPrice = new BigDecimal("82.13");
+
+        Authentication auth = createAuthentication(adminUser);
+
+        webTestClient.mutateWith(SecurityMockServerConfigurers.mockAuthentication(auth))
+            .post()
+            .uri("/products")
+            .contentType(MediaType.MULTIPART_FORM_DATA)
+            .body(BodyInserters.fromMultipartData("name", productName)
+                .with("description", productDescription)
+                .with("price", productPrice.toString())
+                .with("image", new HttpEntity<>(
+                    new ByteArrayResource(createRandomBytes()) {
+                        @Override
+                        public String getFilename() {
+                            return imageName;
+                        }
+                    })))
+            .exchange()
+            .expectStatus().isForbidden();
+    }
+
+    @Test
+    void testCreateProductForbiddenForNonAdmin() {
+        String productName = "TestName";
+        String productDescription = "TestDescription";
+        String imageName = "test-create.jpg";
+        BigDecimal productPrice = new BigDecimal("82.13");
+
+        Authentication auth = createAuthentication(ordinaryUser);
+
+        webTestClient.mutateWith(SecurityMockServerConfigurers.mockAuthentication(auth))
+            .mutateWith(SecurityMockServerConfigurers.csrf())
+            .post()
+            .uri("/products")
+            .contentType(MediaType.MULTIPART_FORM_DATA)
+            .body(BodyInserters.fromMultipartData("name", productName)
+                .with("description", productDescription)
+                .with("price", productPrice.toString())
+                .with("image", new HttpEntity<>(
+                    new ByteArrayResource(createRandomBytes()) {
+                        @Override
+                        public String getFilename() {
+                            return imageName;
+                        }
+                    })))
+            .exchange()
+            .expectStatus().isForbidden();
+    }
+
 
     @Test
     void testCreateProductInvalidCache() {
@@ -152,7 +243,10 @@ public class ProductControllerIntegrationTest extends AbstractIntegrationTest {
         String imageName = "test-create.jpg";
         BigDecimal productPrice = new BigDecimal("82.13");
 
-        webTestClient.get()
+        Authentication auth = createAuthentication(adminUser);
+
+        webTestClient.mutateWith(SecurityMockServerConfigurers.mockAuthentication(auth))
+            .get()
             .uri(builder -> builder
                 .path("/products")
                 .queryParam("page", "0")
@@ -166,11 +260,13 @@ public class ProductControllerIntegrationTest extends AbstractIntegrationTest {
             .countByNameOrDescriptionContaining(eq("searchValue"), eq("searchValue"));
         verify(productRepository, times(1))
             .findByNameOrDescriptionContaining(eq("searchValue"), eq("searchValue"), eq(20), eq(0L));
-        verify(orderRepository, times(1)).findByIsActiveTrue();
+        verify(orderRepository, times(1)).findByUserIdAndIsActiveTrue(adminUser.getId());
 
         // Create post
         //////////////////////////////////////////////////////////////////////////////
-        webTestClient.post()
+        webTestClient.mutateWith(SecurityMockServerConfigurers.mockAuthentication(auth))
+            .mutateWith(SecurityMockServerConfigurers.csrf())
+            .post()
             .uri("/products")
             .contentType(MediaType.MULTIPART_FORM_DATA)
             .body(BodyInserters.fromMultipartData("name", productName)
@@ -188,7 +284,8 @@ public class ProductControllerIntegrationTest extends AbstractIntegrationTest {
         // After post creation cache must be invalidated
         //////////////////////////////////////////////////////////////////////////////
 
-        webTestClient.get()
+        webTestClient.mutateWith(SecurityMockServerConfigurers.mockAuthentication(auth))
+            .get()
             .uri(builder -> builder
                 .path("/products")
                 .queryParam("page", "0")
@@ -202,8 +299,9 @@ public class ProductControllerIntegrationTest extends AbstractIntegrationTest {
             .countByNameOrDescriptionContaining(eq("searchValue"), eq("searchValue"));
         verify(productRepository, times(2))
             .findByNameOrDescriptionContaining(eq("searchValue"), eq("searchValue"), eq(20), eq(0L));
-        verify(orderRepository, times(2)).findByIsActiveTrue();
+        verify(orderRepository, times(2)).findByUserIdAndIsActiveTrue(adminUser.getId());
     }
+
 
     @Test
     void testGetProductById() {
@@ -237,26 +335,29 @@ public class ProductControllerIntegrationTest extends AbstractIntegrationTest {
     @Test
     void testGetProductByIdCached() throws InterruptedException {
         long productId = 1L;
+        Authentication auth = createAuthentication(ordinaryUser);
 
         for (int i = 0; i < 15; i++) {
-            webTestClient.get()
+            webTestClient.mutateWith(SecurityMockServerConfigurers.mockAuthentication(auth))
+                .get()
                 .uri("/products/" + productId)
                 .exchange()
                 .expectStatus().isOk();
         }
 
         verify(productRepository, times(1)).findById(productId);
-        verify(orderRepository, times(1)).findByIsActiveTrue();
+        verify(orderRepository, times(1)).findByUserIdAndIsActiveTrue(ordinaryUser.getId());
 
         // Wait until TTL is expired
         TimeUnit.SECONDS.sleep(2L);
 
-        webTestClient.get()
+        webTestClient.mutateWith(SecurityMockServerConfigurers.mockAuthentication(auth))
+            .get()
             .uri("/products/" + productId)
             .exchange()
             .expectStatus().isOk();
 
         verify(productRepository, times(2)).findById(productId);
-        verify(orderRepository, times(2)).findByIsActiveTrue();
+        verify(orderRepository, times(2)).findByUserIdAndIsActiveTrue(ordinaryUser.getId());
     }
 }

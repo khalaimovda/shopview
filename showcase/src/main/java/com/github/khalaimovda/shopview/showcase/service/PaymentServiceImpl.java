@@ -46,7 +46,7 @@ public class PaymentServiceImpl implements PaymentService {
     }
 
     @Override
-    @PreAuthorize("hasRole('ROLE_ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     public Mono<Balance> addBalance(long userId, BigDecimal amount) {
         return authorizationService
             .getAccessToken()
