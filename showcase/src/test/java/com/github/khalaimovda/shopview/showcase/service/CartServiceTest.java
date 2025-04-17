@@ -56,14 +56,15 @@ public class CartServiceTest {
     @Test
     void testGetCart() {
         // Arrange
+        long userId = 13L;
         OrderDetail cartDetail = getOrderDetail(generateRandomOrderWithProducts());
         Order cart = generateRandomActiveOrder();
         cart.setId(cartDetail.getOderId());
-        when(orderRepository.findByIsActiveTrue()).thenReturn(Mono.just(cart));
+        when(orderRepository.findByUserIdAndIsActiveTrue(anyLong())).thenReturn(Mono.just(cart));
         when(orderService.getOrderDetail(cart.getId())).thenReturn(Mono.just(cartDetail));
 
         // Act
-        Mono<OrderDetail> monoOrderDetail = cartService.getCart();
+        Mono<OrderDetail> monoOrderDetail = cartService.getCart(userId);
 
         // Assert
         StepVerifier
@@ -74,9 +75,10 @@ public class CartServiceTest {
 
     @Test
     void testAddProductToCartProductNotFound() {
+        long userId = 13L;
         when(productRepository.findById(anyLong())).thenReturn(Mono.empty());
         StepVerifier
-            .create(cartService.addProductToCart(136L))
+            .create(cartService.addProductToCart(136L, userId))
             .expectError(NoSuchElementException.class)
             .verify();
         verify(productRepository, times(1)).findById(136L);
@@ -85,16 +87,17 @@ public class CartServiceTest {
     @Test
     void testAddProductToCartCartNotExist() {
         // Arrange
+        long userId = 13L;
         Product product = generateRandomProduct();
         Order newCart = generateRandomActiveOrder();
         when(productRepository.findById(anyLong())).thenReturn(Mono.just(product));
-        when(orderRepository.findByIsActiveTrue()).thenReturn(Mono.empty());
+        when(orderRepository.findByUserIdAndIsActiveTrue(anyLong())).thenReturn(Mono.empty());
         when(orderRepository.save(any())).thenReturn(Mono.just(newCart));
         when(orderProductService.addProductToOrder(anyLong(), anyLong())).thenReturn(Mono.empty());
 
         // Act
         StepVerifier
-            .create(cartService.addProductToCart(product.getId()))
+            .create(cartService.addProductToCart(product.getId(), userId))
             .verifyComplete();
 
         // Assert
@@ -109,21 +112,22 @@ public class CartServiceTest {
     @Test
     void testAddProductToCart() {
         // Arrange
+        long userId = 13L;
         Product product = generateRandomProduct();
         Order cart = generateRandomActiveOrder();
         when(productRepository.findById(anyLong())).thenReturn(Mono.just(product));
-        when(orderRepository.findByIsActiveTrue()).thenReturn(Mono.just(cart));
+        when(orderRepository.findByUserIdAndIsActiveTrue(anyLong())).thenReturn(Mono.just(cart));
         when(orderProductService.addProductToOrder(anyLong(), anyLong())).thenReturn(Mono.empty());
 
         // Act
         StepVerifier
-            .create(cartService.addProductToCart(product.getId()))
+            .create(cartService.addProductToCart(product.getId(), userId))
             .verifyComplete();
 
         // Assert
         verify(productRepository, times(1)).findById(product.getId());
 
-        verify(orderRepository, times(1)).findByIsActiveTrue();
+        verify(orderRepository, times(1)).findByUserIdAndIsActiveTrue(userId);
 
         // If current cart exists we must not save this cart, only order_product
         verify(orderRepository, never()).save(any());
@@ -133,9 +137,10 @@ public class CartServiceTest {
 
     @Test
     void testDecreaseProductInCartProductNotFound() {
+        long userId = 13L;
         when(productRepository.findById(anyLong())).thenReturn(Mono.empty());
         StepVerifier
-            .create(cartService.decreaseProductInCart(136L))
+            .create(cartService.decreaseProductInCart(136L, userId))
             .expectError(NoSuchElementException.class)
             .verify();
         verify(productRepository, times(1)).findById(136L);
@@ -144,39 +149,41 @@ public class CartServiceTest {
     @Test
     void testDecreaseProductInCartCartNotExist() {
         // Arrange
+        long userId = 13L;
         Product product = generateRandomProduct();
         when(productRepository.findById(anyLong())).thenReturn(Mono.just(product));
-        when(orderRepository.findByIsActiveTrue()).thenReturn(Mono.empty());
+        when(orderRepository.findByUserIdAndIsActiveTrue(anyLong())).thenReturn(Mono.empty());
 
         // Act
         StepVerifier
-            .create(cartService.decreaseProductInCart(product.getId()))
+            .create(cartService.decreaseProductInCart(product.getId(), userId))
             .expectError(NoSuchElementException.class)
             .verify();
 
         // Assert
         verify(productRepository, times(1)).findById(product.getId());
-        verify(orderRepository, times(1)).findByIsActiveTrue();
+        verify(orderRepository, times(1)).findByUserIdAndIsActiveTrue(userId);
     }
 
     @Test
     void testDecreaseProductInCart() {
         // Arrange
+        long userId = 13L;
         Product product = generateRandomProduct();
         Order cart = generateRandomActiveOrder();
         when(productRepository.findById(anyLong())).thenReturn(Mono.just(product));
-        when(orderRepository.findByIsActiveTrue()).thenReturn(Mono.just(cart));
+        when(orderRepository.findByUserIdAndIsActiveTrue(userId)).thenReturn(Mono.just(cart));
         when(orderProductService.decreaseProductInOrder(anyLong(), anyLong())).thenReturn(Mono.empty());
 
         // Act
         StepVerifier
-            .create(cartService.decreaseProductInCart(product.getId()))
+            .create(cartService.decreaseProductInCart(product.getId(), userId))
             .verifyComplete();
 
         // Assert
         verify(productRepository, times(1)).findById(product.getId());
 
-        verify(orderRepository, times(1)).findByIsActiveTrue();
+        verify(orderRepository, times(1)).findByUserIdAndIsActiveTrue(userId);
 
         // If current cart exists we must not save this cart, only order_product
         verify(orderRepository, never()).save(any());
@@ -187,9 +194,10 @@ public class CartServiceTest {
 
     @Test
     void testRemoveProductFromCartProductNotFound() {
+        long userId = 13L;
         when(productRepository.findById(anyLong())).thenReturn(Mono.empty());
         StepVerifier
-            .create(cartService.removeProductFromCart(136L))
+            .create(cartService.removeProductFromCart(136L, userId))
             .expectError(NoSuchElementException.class)
             .verify();
         verify(productRepository, times(1)).findById(136L);
@@ -198,39 +206,41 @@ public class CartServiceTest {
     @Test
     void testRemoveProductFromCartCartNotExist() {
         // Arrange
+        long userId = 13L;
         Product product = generateRandomProduct();
         when(productRepository.findById(anyLong())).thenReturn(Mono.just(product));
-        when(orderRepository.findByIsActiveTrue()).thenReturn(Mono.empty());
+        when(orderRepository.findByUserIdAndIsActiveTrue(anyLong())).thenReturn(Mono.empty());
 
         // Act
         StepVerifier
-            .create(cartService.removeProductFromCart(product.getId()))
+            .create(cartService.removeProductFromCart(product.getId(), userId))
             .expectError(NoSuchElementException.class)
             .verify();
 
         // Assert
         verify(productRepository, times(1)).findById(product.getId());
-        verify(orderRepository, times(1)).findByIsActiveTrue();
+        verify(orderRepository, times(1)).findByUserIdAndIsActiveTrue(userId);
     }
 
     @Test
     void testRemoveProductFromCart() {
         // Arrange
+        long userId = 13L;
         Product product = generateRandomProduct();
         Order cart = generateRandomActiveOrder();
         when(productRepository.findById(anyLong())).thenReturn(Mono.just(product));
-        when(orderRepository.findByIsActiveTrue()).thenReturn(Mono.just(cart));
+        when(orderRepository.findByUserIdAndIsActiveTrue(anyLong())).thenReturn(Mono.just(cart));
         when(orderProductService.removeProductFromOrder(anyLong(), anyLong())).thenReturn(Mono.empty());
 
         // Act
         StepVerifier
-            .create(cartService.removeProductFromCart(product.getId()))
+            .create(cartService.removeProductFromCart(product.getId(), userId))
             .verifyComplete();
 
         // Assert
         verify(productRepository, times(1)).findById(product.getId());
 
-        verify(orderRepository, times(1)).findByIsActiveTrue();
+        verify(orderRepository, times(1)).findByUserIdAndIsActiveTrue(userId);
 
         // If current cart exists we must not save this cart, only order_product
         verify(orderRepository, never()).save(any());
@@ -241,21 +251,23 @@ public class CartServiceTest {
     @Test
     void testCheckoutCartNotExist() {
         // Arrange
-        when(orderRepository.findByIsActiveTrue()).thenReturn(Mono.empty());
+        long userId = 13L;
+        when(orderRepository.findByUserIdAndIsActiveTrue(anyLong())).thenReturn(Mono.empty());
 
         // Act
         StepVerifier
-            .create(cartService.checkout())
+            .create(cartService.checkout(userId))
             .expectError(NoSuchElementException.class)
             .verify();
 
         // Assert
-        verify(orderRepository, times(1)).findByIsActiveTrue();
+        verify(orderRepository, times(1)).findByUserIdAndIsActiveTrue(userId);
     }
 
     @Test
     void testCheckoutCartIsEmpty() {
         // Arrange
+        long userId = 13L;
 
         // Empty cart
         OrderWithProducts orderWithProducts = generateRandomOrderWithProducts();
@@ -264,43 +276,44 @@ public class CartServiceTest {
         Order cart = generateRandomActiveOrder();
         cart.setId(orderWithProducts.getId());
 
-        when(orderRepository.findByIsActiveTrue()).thenReturn(Mono.just(cart));
+        when(orderRepository.findByUserIdAndIsActiveTrue(anyLong())).thenReturn(Mono.just(cart));
         when(orderService.getOrderDetail(cart.getId())).thenReturn(Mono.just(orderDetail));
 
         // Act and Assert
         StepVerifier
-            .create(cartService.checkout())
+            .create(cartService.checkout(userId))
             .expectError(IllegalStateException.class)
             .verify();
 
-        verify(orderRepository, times(1)).findByIsActiveTrue();
+        verify(orderRepository, times(1)).findByUserIdAndIsActiveTrue(userId);
         verify(orderService, times(1)).getOrderDetail(cart.getId());
     }
 
     @Test
     void testCheckoutCart() {
         // Arrange
+        long userId = 13L;
         OrderWithProducts orderWithProducts = generateRandomOrderWithProducts();
         BigDecimal totalPrice = calculateOrderPrice(orderWithProducts);
         OrderDetail orderDetail = getOrderDetail(orderWithProducts);
         Order cart = generateRandomActiveOrder();
         cart.setId(orderWithProducts.getId());
 
-        when(orderRepository.findByIsActiveTrue()).thenReturn(Mono.just(cart));
+        when(orderRepository.findByUserIdAndIsActiveTrue(anyLong())).thenReturn(Mono.just(cart));
         when(orderService.getOrderDetail(cart.getId())).thenReturn(Mono.just(orderDetail));
-        when(paymentService.makePayment(any(BigDecimal.class)))
+        when(paymentService.makePayment(anyLong(), any(BigDecimal.class)))
             .thenReturn(Mono.just(new Balance().balance(BigDecimal.TWO)));
         when(orderRepository.save(any(Order.class))).thenReturn(Mono.just(new Order()));
 
         // Act
         StepVerifier
-            .create(cartService.checkout())
+            .create(cartService.checkout(userId))
             .verifyComplete();
 
         // Assert
-        verify(orderRepository, times(1)).findByIsActiveTrue();
+        verify(orderRepository, times(1)).findByUserIdAndIsActiveTrue(userId);
         verify(orderService, times(1)).getOrderDetail(cart.getId());
-        verify(paymentService, times(1)).makePayment(totalPrice);
+        verify(paymentService, times(1)).makePayment(userId, totalPrice);
         verify(orderRepository, times(1)).save(orderCaptor.capture());
 
         cart.setIsActive(false);
@@ -310,6 +323,7 @@ public class CartServiceTest {
     @Test
     void testCheckoutCartInsufficientFunds() {
         // Arrange
+        long userId = 13L;
         OrderWithProducts orderWithProducts = generateRandomOrderWithProducts();
         BigDecimal totalPrice = calculateOrderPrice(orderWithProducts);
         BigDecimal availableBalance = totalPrice.subtract(BigDecimal.ONE);
@@ -317,21 +331,21 @@ public class CartServiceTest {
         Order cart = generateRandomActiveOrder();
         cart.setId(orderWithProducts.getId());
 
-        when(orderRepository.findByIsActiveTrue()).thenReturn(Mono.just(cart));
+        when(orderRepository.findByUserIdAndIsActiveTrue(anyLong())).thenReturn(Mono.just(cart));
         when(orderService.getOrderDetail(cart.getId())).thenReturn(Mono.just(orderDetail));
-        when(paymentService.makePayment(any(BigDecimal.class))).thenReturn(Mono.error(new InsufficientFundsException(
+        when(paymentService.makePayment(anyLong(), any(BigDecimal.class))).thenReturn(Mono.error(new InsufficientFundsException(
                 HttpStatus.BAD_REQUEST, "Not enough funds to complete transaction", totalPrice, availableBalance)));
 
         // Act
         StepVerifier
-            .create(cartService.checkout())
+            .create(cartService.checkout(userId))
             .expectError(InsufficientFundsException.class)
             .verify();
 
         // Assert
-        verify(orderRepository, times(1)).findByIsActiveTrue();
+        verify(orderRepository, times(1)).findByUserIdAndIsActiveTrue(userId);
         verify(orderService, times(1)).getOrderDetail(cart.getId());
-        verify(paymentService, times(1)).makePayment(totalPrice);
+        verify(paymentService, times(1)).makePayment(userId, totalPrice);
         verify(orderRepository, never()).save(any(Order.class));
     }
 }

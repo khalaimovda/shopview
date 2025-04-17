@@ -44,8 +44,9 @@ public class OrderServiceTest {
     @Test
     void testGetAllOrders() {
         // Arrange
+        long userId = 13L;
         List<OrderWithProducts> ordersWithProducts = generateRandomOrdersWithProducts(5);
-        when(orderRepository.findAllPlacedOrdersWithProducts())
+        when(orderRepository.findAllPlacedOrdersWithProducts(anyLong()))
             .thenReturn(Flux.just(ordersWithProducts.toArray(new OrderWithProducts[0])));
 
         List<OrderListItem> expectedOrderListItems = ordersWithProducts.stream()
@@ -57,7 +58,7 @@ public class OrderServiceTest {
             }).toList();
 
         // Act
-        Flux<OrderListItem> fluxOrderListItems = orderService.getAllOrders();
+        Flux<OrderListItem> fluxOrderListItems = orderService.getAllOrders(userId);
 
         // Assert
         StepVerifier
@@ -65,7 +66,7 @@ public class OrderServiceTest {
             .assertNext(orderListItems ->  assertEquals(expectedOrderListItems, orderListItems))
             .verifyComplete();
 
-        verify(orderRepository, times(1)).findAllPlacedOrdersWithProducts();
+        verify(orderRepository, times(1)).findAllPlacedOrdersWithProducts(userId);
     }
 
     @Test

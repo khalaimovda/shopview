@@ -17,6 +17,7 @@ import reactor.test.StepVerifier;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import static com.github.khalaimovda.shopview.showcase.utils.OrderUtils.generateRandomActiveOrder;
 import static com.github.khalaimovda.shopview.showcase.utils.ProductUtils.generateRandomProducts;
@@ -70,6 +71,7 @@ public class ProductCacheServiceTest {
         String name = "Test name";
         String description = "Test description";
         String imageServicePostfix = "/path";
+        long userId = 13L;
 
         int limit = 3;
         long offset = 0L;
@@ -79,7 +81,7 @@ public class ProductCacheServiceTest {
             .thenReturn(Flux.just(products.toArray(new Product[0])));
 
         Order activeOrder = generateRandomActiveOrder();
-        when(orderRepository.findByIsActiveTrue())
+        when(orderRepository.findByUserIdAndIsActiveTrue(anyLong()))
             .thenReturn(Mono.just(activeOrder));
 
         Integer firstProductCount = 4;
@@ -102,7 +104,7 @@ public class ProductCacheServiceTest {
 
 
         // Act
-        Mono<List<ProductListItem>> monoProductPage = productCacheService.getProductItems(name, description, limit, offset);
+        Mono<List<ProductListItem>> monoProductPage = productCacheService.getProductItems(name, description, limit, offset, Optional.of(userId));
 
         // Assert
         StepVerifier
@@ -114,7 +116,7 @@ public class ProductCacheServiceTest {
             .findByNameOrDescriptionContaining(eq(name), eq(description), eq(limit), eq(offset));
 
         verify(orderRepository, times(1))
-            .findByIsActiveTrue();
+            .findByUserIdAndIsActiveTrue(userId);
 
         verify(orderProductService, times(1))
             .getProductIdCountMap(eq(activeOrder.getId()), productIdsCaptor.capture());

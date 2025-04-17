@@ -26,6 +26,7 @@ import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.Optional;
 
 import static com.github.khalaimovda.shopview.showcase.utils.OrderProductUtils.generateRandomOrderProduct;
 import static com.github.khalaimovda.shopview.showcase.utils.OrderUtils.generateRandomActiveOrder;
@@ -108,6 +109,7 @@ class ProductServiceTest {
         String contentSubstring = "Test search";
         int totalElements = 15;
         String imageServicePostfix = "/path";
+        long userId = 13L;
 
         Pageable pageable = PageRequest.of(0, 3);
         List<Product> products = generateRandomProducts(3);
@@ -124,12 +126,12 @@ class ProductServiceTest {
         when(productCacheService.countProducts(anyString(), anyString()))
             .thenReturn(Mono.just(totalElements));
 
-        when(productCacheService.getProductItems(anyString(), anyString(), anyInt(), anyLong()))
+        when(productCacheService.getProductItems(anyString(), anyString(), anyInt(), anyLong(), any(Optional.class)))
             .thenReturn(Mono.just(expectedResultProducts));
 
 
         // Act
-        Mono<Page<ProductListItem>> monoProductPage = productService.getAllProducts(contentSubstring, pageable);
+        Mono<Page<ProductListItem>> monoProductPage = productService.getAllProducts(contentSubstring, pageable, Optional.of(userId));
 
         // Assert
         StepVerifier
@@ -146,15 +148,16 @@ class ProductServiceTest {
             .countProducts(eq(contentSubstring), eq(contentSubstring));
 
         verify(productCacheService, times(1))
-            .getProductItems(eq(contentSubstring), eq(contentSubstring), eq(pageable.getPageSize()), eq(pageable.getOffset()));
+            .getProductItems(eq(contentSubstring), eq(contentSubstring), eq(pageable.getPageSize()), eq(pageable.getOffset()), eq(Optional.of(userId)));
     }
 
     @Test
     void testGetProductByIdNotFound() {
         long productId = 135L;
+        long userId = 13L;
         when(productRepository.findById(productId)).thenReturn(Mono.empty());
 
-        Mono<ProductDetail> monoProduct = productService.getProductById(productId);
+        Mono<ProductDetail> monoProduct = productService.getProductDetailById(productId, Optional.of(userId));
 
         StepVerifier
             .create(monoProduct)
@@ -168,12 +171,13 @@ class ProductServiceTest {
         // Arrange
         String imageServicePostfix = "/path";
         Product product = generateRandomProduct();
+        long userId = 13L;
 
         when(productRepository.findById(anyLong()))
             .thenReturn(Mono.just(product));
 
         Order activeOrder = generateRandomActiveOrder();
-        when(orderRepository.findByIsActiveTrue())
+        when(orderRepository.findByUserIdAndIsActiveTrue(anyLong()))
             .thenReturn(Mono.just(activeOrder));
 
         OrderProduct orderProduct = generateRandomOrderProduct(activeOrder.getId(), product.getId());
@@ -190,7 +194,7 @@ class ProductServiceTest {
             product, product.getImagePath() + imageServicePostfix, count);
 
         // Act
-        Mono<ProductDetail> monoProductDetail = productService.getProductById(product.getId());
+        Mono<ProductDetail> monoProductDetail = productService.getProductDetailById(product.getId(), Optional.of(userId));
 
         // Assert
         StepVerifier
@@ -199,7 +203,7 @@ class ProductServiceTest {
             .verifyComplete();
 
         verify(productRepository, times(1)).findById(product.getId());
-        verify(orderRepository, times(1)).findByIsActiveTrue();
+        verify(orderRepository, times(1)).findByUserIdAndIsActiveTrue(userId);
         verify(orderProductRepository, times(1)).findByOrderIdAndProductId(anyLong(), anyLong());
         verify(imageService, times(1)).getImageSrcPath(product.getImagePath());
     }
