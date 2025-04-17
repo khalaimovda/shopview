@@ -29,3 +29,8 @@ spring:
     url: jdbc:postgresql://localhost:5432/shop
     user: username
     password: password
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: http://localhost:8090/realms/shopview

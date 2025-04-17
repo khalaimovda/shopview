@@ -37,6 +37,20 @@ spring:
   cache:
     redis:
       time-to-live: PT1M
+  security:
+    oauth2:
+      client:
+        provider:
+          keycloak:
+            issuer-uri: http://localhost:8090/realms/shopview
+        registration:
+          showcase:
+            provider: keycloak
+            authorizationGrantType: client_credentials
+            client-id: showcase
+            client-secret: qWYwpcUChkjhg5n9umUJTaBlrzSQqB34
+            scope: profile
+            clientAuthenticationMethod: client_secret_post
 app:
   images:
     upload-dir: uploads/images
