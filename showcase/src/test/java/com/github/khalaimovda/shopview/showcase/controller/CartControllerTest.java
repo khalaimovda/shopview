@@ -3,114 +3,103 @@ package com.github.khalaimovda.shopview.showcase.controller;
 
 import com.github.khalaimovda.shopview.showcase.dto.OrderDetail;
 import com.github.khalaimovda.shopview.showcase.dto.OrderWithProducts;
-import com.github.khalaimovda.shopview.showcase.mapper.PaymentMapperImpl;
 import com.github.khalaimovda.shopview.showcase.model.Order;
 import com.github.khalaimovda.shopview.showcase.model.Product;
+import com.github.khalaimovda.shopview.showcase.security.AuthenticatedUser;
 import com.github.khalaimovda.shopview.showcase.service.CartService;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.reactive.WebFluxTest;
-import org.springframework.context.annotation.Import;
-import org.springframework.http.MediaType;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
-import org.springframework.test.web.reactive.server.WebTestClient;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.ui.Model;
 import reactor.core.publisher.Mono;
+import reactor.test.StepVerifier;
 
 import java.util.List;
 
 import static com.github.khalaimovda.shopview.showcase.utils.OrderUtils.*;
 import static com.github.khalaimovda.shopview.showcase.utils.ProductUtils.generateRandomProducts;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.*;
 
 
-@WebFluxTest(CartController.class)
-@Import({PaymentMapperImpl.class})
-public class CartControllerTest {
+@ExtendWith(MockitoExtension.class)
+class CartControllerTest {
 
-    @Autowired
-    private WebTestClient webTestClient;
-
-    @MockitoBean
+    @Mock
     private CartService cartService;
 
+    @Mock
+    private Model model;
+
+    @InjectMocks
+    private CartController cartController;
+
+    private final AuthenticatedUser authenticatedUser = new AuthenticatedUser(
+        42L, "testuser", "encodedPassword", List.of()
+    );
+
     @Test
-    void testGetCart() throws Exception {
+    void testGetCart() {
         List<Product> products = generateRandomProducts(5);
         Order order = generateRandomNotActiveOrder();
         OrderWithProducts orderWithProducts = generateRandomOrderWithProducts(order.getId(), products);
-        OrderDetail orderDetail = getOrderDetail(orderWithProducts);
-        when(cartService.getCart()).thenReturn(Mono.just(orderDetail));
+        OrderDetail cart = getOrderDetail(orderWithProducts);
+        when(cartService.getCart(anyLong())).thenReturn(Mono.just(cart));
 
-        webTestClient
-            .get()
-            .uri("/cart")
-            .exchange()
-            .expectStatus().isOk()
-            .expectHeader().contentType(MediaType.TEXT_HTML)
-            .expectBody(String.class)
-            .consumeWith(response -> {
-               String body = response.getResponseBody();
-               assertNotNull(body);
-               assertTrue(body.contains("cart"));
-            });
+        StepVerifier
+            .create(cartController.getCart(authenticatedUser, model))
+            .expectNext("cart")
+            .verifyComplete();
 
-        verify(cartService, times(1)).getCart();
+        verify(cartService, times(1)).getCart(authenticatedUser.getId());
+        verify(model).addAttribute("cart", cart);
     }
 
     @Test
     void testAddProductToCart() throws Exception {
         long productId = 13L;
-        when(cartService.addProductToCart(anyLong())).thenReturn(Mono.empty());
+        when(cartService.addProductToCart(anyLong(), anyLong())).thenReturn(Mono.empty());
 
-        webTestClient
-            .post()
-            .uri("/cart/add/" + productId)
-            .exchange()
-            .expectStatus().isOk();
+        StepVerifier
+            .create(cartController.addProductToCart(authenticatedUser, productId))
+            .verifyComplete();
 
-        verify(cartService, times(1)).addProductToCart(productId);
+        verify(cartService, times(1)).addProductToCart(productId, authenticatedUser.getId());
     }
 
     @Test
     void testDecreaseProductInCart() throws Exception {
         long productId = 13L;
-        when(cartService.decreaseProductInCart(anyLong())).thenReturn(Mono.empty());
+        when(cartService.decreaseProductInCart(anyLong(), anyLong())).thenReturn(Mono.empty());
 
-        webTestClient
-            .post()
-            .uri("/cart/decrease/" + productId)
-            .exchange()
-            .expectStatus().isOk();
+        StepVerifier
+            .create(cartController.decreaseProductInCart(authenticatedUser, productId))
+            .verifyComplete();
 
-        verify(cartService, times(1)).decreaseProductInCart(productId);
+        verify(cartService, times(1)).decreaseProductInCart(productId, authenticatedUser.getId());
     }
 
     @Test
     void testRemoveProductFromCart() throws Exception {
         long productId = 13L;
-        when(cartService.removeProductFromCart(anyLong())).thenReturn(Mono.empty());
+        when(cartService.removeProductFromCart(anyLong(), anyLong())).thenReturn(Mono.empty());
 
-        webTestClient
-            .delete()
-            .uri("/cart/remove/" + productId)
-            .exchange()
-            .expectStatus().isOk();
+        StepVerifier
+            .create(cartController.removeProductFromCart(authenticatedUser, productId))
+            .verifyComplete();
 
-        verify(cartService, times(1)).removeProductFromCart(productId);
+        verify(cartService, times(1)).removeProductFromCart(productId, authenticatedUser.getId());
     }
 
     @Test
     void testCheckout() throws Exception {
-        when(cartService.checkout()).thenReturn(Mono.empty());
+        when(cartService.checkout(anyLong())).thenReturn(Mono.empty());
 
-        webTestClient
-            .post()
-            .uri("/cart/checkout")
-            .exchange()
-            .expectStatus().isOk();
+        StepVerifier
+            .create(cartController.checkout(authenticatedUser))
+            .verifyComplete();
 
-        verify(cartService, times(1)).checkout();
+        verify(cartService, times(1)).checkout(authenticatedUser.getId());
     }
 }

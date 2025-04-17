@@ -27,8 +27,6 @@ import reactor.core.publisher.Mono;
 import java.net.URI;
 import java.util.List;
 
-import static org.springframework.security.config.Customizer.withDefaults;
-
 @Configuration
 @EnableWebFluxSecurity
 @EnableReactiveMethodSecurity

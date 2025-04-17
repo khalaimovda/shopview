@@ -4,38 +4,42 @@ package com.github.khalaimovda.shopview.showcase.controller;
 import com.github.khalaimovda.shopview.showcase.dto.OrderDetail;
 import com.github.khalaimovda.shopview.showcase.dto.OrderListItem;
 import com.github.khalaimovda.shopview.showcase.dto.OrderWithProducts;
-import com.github.khalaimovda.shopview.showcase.mapper.PaymentMapperImpl;
 import com.github.khalaimovda.shopview.showcase.model.Order;
 import com.github.khalaimovda.shopview.showcase.model.Product;
+import com.github.khalaimovda.shopview.showcase.security.AuthenticatedUser;
 import com.github.khalaimovda.shopview.showcase.service.OrderService;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.reactive.WebFluxTest;
-import org.springframework.context.annotation.Import;
-import org.springframework.http.MediaType;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
-import org.springframework.test.web.reactive.server.WebTestClient;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.ui.Model;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import reactor.test.StepVerifier;
 
 import java.util.List;
 
 import static com.github.khalaimovda.shopview.showcase.utils.OrderUtils.*;
 import static com.github.khalaimovda.shopview.showcase.utils.ProductUtils.generateRandomProducts;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.*;
 
 
-@WebFluxTest(OrderController.class)
-@Import({PaymentMapperImpl.class})
+@ExtendWith(MockitoExtension.class)
 public class OrderControllerTest {
 
-    @Autowired
-    private WebTestClient webTestClient;
-
-    @MockitoBean
+    @Mock
     private OrderService orderService;
+
+    @Mock
+    private Model model;
+
+    @InjectMocks
+    private OrderController orderController;
+
+    private final AuthenticatedUser authenticatedUser = new AuthenticatedUser(
+        42L, "testuser", "encodedPassword", List.of()
+    );
 
     @Test
     void testGetAllOrders() throws Exception {
@@ -48,23 +52,16 @@ public class OrderControllerTest {
                 return orderListItem;
             }).toList();
 
-        when(orderService.getAllOrders())
+        when(orderService.getAllOrders(anyLong()))
             .thenReturn(Flux.just(orders.toArray(new OrderListItem[0])));
 
-        webTestClient
-            .get()
-            .uri("/orders")
-            .exchange()
-            .expectStatus().isOk()
-            .expectHeader().contentType(MediaType.TEXT_HTML)
-            .expectBody(String.class)
-            .consumeWith(response -> {
-                String body = response.getResponseBody();
-                assertNotNull(body);
-                assertTrue(body.contains("orders"));
-            });
+        StepVerifier
+            .create(orderController.getAllOrders(authenticatedUser, model))
+            .expectNext("orders")
+            .verifyComplete();
 
-        verify(orderService, times(1)).getAllOrders();
+        verify(orderService, times(1)).getAllOrders(authenticatedUser.getId());
+        verify(model).addAttribute("orders", orders);
     }
 
     @Test
@@ -76,19 +73,12 @@ public class OrderControllerTest {
 
         when(orderService.getOrderDetail(anyLong())).thenReturn(Mono.just(orderDetail));
 
-        webTestClient
-            .get()
-            .uri("/orders/" + order.getId())
-            .exchange()
-            .expectStatus().isOk()
-            .expectHeader().contentType(MediaType.TEXT_HTML)
-            .expectBody(String.class)
-            .consumeWith(response -> {
-                String body = response.getResponseBody();
-                assertNotNull(body);
-                assertTrue(body.contains("products"));
-            });
+        StepVerifier
+            .create(orderController.getOrderById(model, order.getId()))
+            .expectNext("order")
+            .verifyComplete();
 
         verify(orderService, times(1)).getOrderDetail(order.getId());
+        verify(model).addAttribute("order", orderDetail);
     }
 }
