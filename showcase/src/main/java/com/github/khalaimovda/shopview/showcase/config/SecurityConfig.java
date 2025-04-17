@@ -54,15 +54,8 @@ public class SecurityConfig {
                 .pathMatchers("/users").hasRole("ADMIN")
                 .anyExchange().authenticated()
             )
-//            .formLogin(form -> form.authenticationSuccessHandler(loginSuccessHandler))
-//            .formLogin(form -> form
-//                .authenticationSuccessHandler(loginSuccessHandler)
-//                .authenticationFailureHandler(new RedirectServerAuthenticationFailureHandler("/login?error"))
-//            )
-//            .logout(logout -> logout.logoutSuccessHandler(logoutSuccessHandler))
-
-            .formLogin(withDefaults())
-            .logout(withDefaults())
+            .formLogin(form -> form.authenticationSuccessHandler(loginSuccessHandler))
+            .logout(logout -> logout.logoutSuccessHandler(logoutSuccessHandler))
             .build();
     }
 
