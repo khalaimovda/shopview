@@ -43,7 +43,7 @@ public class UserController {
     public Mono<String> getUsers(Model model) {
         return userService.
             getAllUsers()
-            .map(users -> model.addAttribute("users", users))
+            .doOnNext(users -> model.addAttribute("users", users))
             .thenReturn("users");
     }
 }
