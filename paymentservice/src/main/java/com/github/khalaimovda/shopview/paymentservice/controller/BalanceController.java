@@ -10,6 +10,7 @@ import com.github.khalaimovda.shopview.paymentservice.mapper.BalanceMapper;
 import com.github.khalaimovda.shopview.paymentservice.service.BalanceService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ServerWebExchange;
@@ -25,7 +26,8 @@ public class BalanceController implements DefaultApi {
     private final BalanceMapper mapper;
 
     @Override
-    public Mono<ResponseEntity<Balance>> apiBalanceGet(Long userId, ServerWebExchange exchange) {
+    @PreAuthorize("isAuthenticated() and hasAuthority('read')")
+    public Mono<ResponseEntity<Balance>> apiBalanceGet(String authorization, Long userId, ServerWebExchange exchange) {
         return service
             .getBalance(userId)
             .map(mapper::toDomainBalance)
@@ -33,7 +35,8 @@ public class BalanceController implements DefaultApi {
     }
 
     @Override
-    public Mono<ResponseEntity<Balance>> apiBalancePost(Mono<AddBalanceRequest> addBalanceRequest, ServerWebExchange exchange) {
+    @PreAuthorize("isAuthenticated() and hasAuthority('write')")
+    public Mono<ResponseEntity<Balance>> apiBalancePost(String authorization, Mono<AddBalanceRequest> addBalanceRequest, ServerWebExchange exchange) {
         return addBalanceRequest
             .flatMap(abr -> service.addBalance(abr.getUserId(), abr.getAmount()))
             .map(mapper::toDomainBalance)
@@ -41,7 +44,8 @@ public class BalanceController implements DefaultApi {
     }
 
     @Override
-    public Mono<ResponseEntity<PaymentSuccessResponse>> apiPaymentsPost(Mono<PaymentRequest> paymentRequest, ServerWebExchange exchange) {
+    @PreAuthorize("isAuthenticated() and hasAuthority('write')")
+    public Mono<ResponseEntity<PaymentSuccessResponse>> apiPaymentsPost(String authorization, Mono<PaymentRequest> paymentRequest, ServerWebExchange exchange) {
         return paymentRequest
             .flatMap(pr -> service.decreaseBalance(pr.getUserId(), pr.getAmount()))
             .map(mapper::toPaymentSuccessResponse)

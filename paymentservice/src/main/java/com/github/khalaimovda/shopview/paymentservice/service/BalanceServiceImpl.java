@@ -5,6 +5,7 @@ import com.github.khalaimovda.shopview.paymentservice.exception.UserBalanceNotFo
 import com.github.khalaimovda.shopview.paymentservice.model.Balance;
 import com.github.khalaimovda.shopview.paymentservice.repository.BalanceRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
@@ -17,11 +18,13 @@ public class BalanceServiceImpl implements BalanceService {
     private final BalanceRepository repository;
 
     @Override
+    @PreAuthorize("isAuthenticated() and hasAuthority('read')")
     public Mono<Balance> getBalance(long userId) {
         return repository.findByUserId(userId);
     }
 
     @Override
+    @PreAuthorize("isAuthenticated() and hasAuthority('write')")
     public Mono<Balance> decreaseBalance(long userId, BigDecimal amount) {
         return repository
             .findByUserId(userId)
@@ -37,6 +40,7 @@ public class BalanceServiceImpl implements BalanceService {
     }
 
     @Override
+    @PreAuthorize("isAuthenticated() and hasAuthority('write')")
     public Mono<Balance> addBalance(long userId, BigDecimal amount) {
         return repository
             .findByUserId(userId)

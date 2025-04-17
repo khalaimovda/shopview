@@ -3,6 +3,8 @@ package com.github.khalaimovda.shopview.paymentservice.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.config.annotation.method.configuration.EnableReactiveMethodSecurity;
+import org.springframework.security.config.annotation.web.reactive.EnableWebFluxSecurity;
 import org.springframework.security.config.web.server.ServerHttpSecurity;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.oauth2.server.resource.authentication.ReactiveJwtAuthenticationConverter;
@@ -13,11 +15,14 @@ import java.util.List;
 import java.util.Map;
 
 @Configuration
+@EnableWebFluxSecurity
+@EnableReactiveMethodSecurity
 public class SecurityConfig {
     @Bean
-    SecurityWebFilterChain securityFilterChain(ServerHttpSecurity security) throws Exception {
+    SecurityWebFilterChain securityFilterChain(ServerHttpSecurity security) {
         return security
             .authorizeExchange(requests -> requests
+                .pathMatchers("/swagger-ui.html", "/webjars/swagger-ui/**", "/v3/api-docs/**").permitAll()
                 .anyExchange().authenticated()
             )
             .oauth2ResourceServer(serverSpec -> serverSpec
