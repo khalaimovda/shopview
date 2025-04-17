@@ -6,6 +6,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.cache.annotation.Caching;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import reactor.core.publisher.Mono;
@@ -25,6 +26,7 @@ public class OrderProductServiceImpl implements OrderProductService {
         value = "products",
         key = "'countMap' + ':' + #orderId + ':' + #productIds.hashCode()"
     )
+    @PreAuthorize("isAuthenticated()")
     public Mono<Map<Long, Integer>> getProductIdCountMap(Long orderId, List<Long> productIds) {
         return orderProductRepository
             .findAllByOrderIdAndProductIdIn(orderId, productIds)
@@ -39,6 +41,7 @@ public class OrderProductServiceImpl implements OrderProductService {
         @CacheEvict(value = "products", allEntries = true),
         @CacheEvict(value = "orders", allEntries = true)
     })
+    @PreAuthorize("isAuthenticated()")
     public Mono<Void> addProductToOrder(Long orderId, Long productId) {
         return orderProductRepository
             .findByOrderIdAndProductId(orderId, productId)
@@ -58,6 +61,7 @@ public class OrderProductServiceImpl implements OrderProductService {
         @CacheEvict(value = "products", allEntries = true),
         @CacheEvict(value = "orders", allEntries = true)
     })
+    @PreAuthorize("isAuthenticated()")
     public Mono<Void> decreaseProductInOrder(Long orderId, Long productId) {
         return orderProductRepository
             .findByOrderIdAndProductId(orderId, productId)
@@ -77,6 +81,7 @@ public class OrderProductServiceImpl implements OrderProductService {
         @CacheEvict(value = "products", allEntries = true),
         @CacheEvict(value = "orders", allEntries = true)
     })
+    @PreAuthorize("isAuthenticated()")
     public Mono<Void> removeProductFromOrder(Long orderId, Long productId) {
         return orderProductRepository
             .findByOrderIdAndProductId(orderId, productId)

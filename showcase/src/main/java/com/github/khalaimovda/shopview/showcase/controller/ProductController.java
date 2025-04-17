@@ -12,6 +12,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -45,6 +46,7 @@ public class ProductController {
     }
 
     @PostMapping(path = "", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PreAuthorize("isAuthenticated() and hasRole('ROLE_ADMIN')")
     @ResponseStatus(HttpStatus.CREATED)
     public Mono<Void> createProduct(@Valid @ModelAttribute ProductCreateForm form) {
         return productService.createProduct(form);

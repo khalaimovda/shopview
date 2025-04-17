@@ -10,6 +10,7 @@ import com.github.khalaimovda.shopview.showcase.mapper.PaymentMapper;
 import com.github.khalaimovda.shopview.showcase.security.AuthorizationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClientRequestException;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
@@ -26,6 +27,7 @@ public class PaymentServiceImpl implements PaymentService {
     private final AuthorizationService authorizationService;
 
     @Override
+    @PreAuthorize("isAuthenticated() and #userId == principal.id")
     public Mono<Balance> getBalance(long userId) {
         return authorizationService
             .getAccessToken()
@@ -44,6 +46,7 @@ public class PaymentServiceImpl implements PaymentService {
     }
 
     @Override
+    @PreAuthorize("hasRole('ROLE_ADMIN')")
     public Mono<Balance> addBalance(long userId, BigDecimal amount) {
         return authorizationService
             .getAccessToken()
@@ -63,6 +66,7 @@ public class PaymentServiceImpl implements PaymentService {
     }
 
     @Override
+    @PreAuthorize("isAuthenticated() and #userId == principal.id")
     public Mono<Balance> makePayment(long userId, BigDecimal amount) {
         return authorizationService
             .getAccessToken()

@@ -34,6 +34,7 @@ public class OrderController {
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("isAuthenticated()")
     public Mono<String> getOrderById(Model model, @PathVariable("id") @Min(1L) Long id) {
         return orderService
             .getOrderDetail(id)

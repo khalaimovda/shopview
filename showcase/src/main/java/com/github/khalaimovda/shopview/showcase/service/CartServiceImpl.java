@@ -9,6 +9,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.cache.annotation.Caching;
+import org.springframework.security.access.prepost.PostAuthorize;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import reactor.core.publisher.Mono;
@@ -30,6 +32,8 @@ public class CartServiceImpl implements CartService {
     @Override
     @Transactional
     @Cacheable(value = "orders", key = "'cart'")
+    @PreAuthorize("isAuthenticated() and #userId == principal.id")
+    @PostAuthorize("returnObject.userId == principal.id")
     public Mono<OrderDetail> getCart(Long userId) {
         return orderRepository
             .findByUserIdAndIsActiveTrue(userId)
@@ -42,6 +46,7 @@ public class CartServiceImpl implements CartService {
         @CacheEvict(value = "products", allEntries = true),
         @CacheEvict(value = "orders", allEntries = true)
     })
+    @PreAuthorize("isAuthenticated() and #userId == principal.id")
     public Mono<Void> addProductToCart(Long productId, Long userId) {
         return getProductByIdOrNoSuchElementException(productId)
             .flatMap(product -> getOrCreateActiveOrder(userId)
@@ -54,6 +59,7 @@ public class CartServiceImpl implements CartService {
         @CacheEvict(value = "products", allEntries = true),
         @CacheEvict(value = "orders", allEntries = true)
     })
+    @PreAuthorize("isAuthenticated() and #userId == principal.id")
     public Mono<Void> decreaseProductInCart(Long productId, Long userId) {
         return getProductByIdOrNoSuchElementException(productId)
             .flatMap(product -> getActiveOrderOrNoSuchElementException(userId)
@@ -66,6 +72,7 @@ public class CartServiceImpl implements CartService {
         @CacheEvict(value = "products", allEntries = true),
         @CacheEvict(value = "orders", allEntries = true)
     })
+    @PreAuthorize("isAuthenticated() and #userId == principal.id")
     public Mono<Void> removeProductFromCart(Long productId, Long userId) {
         return getProductByIdOrNoSuchElementException(productId)
             .flatMap(product -> getActiveOrderOrNoSuchElementException(userId)
@@ -78,6 +85,7 @@ public class CartServiceImpl implements CartService {
         @CacheEvict(value = "products", allEntries = true),
         @CacheEvict(value = "orders", allEntries = true)
     })
+    @PreAuthorize("isAuthenticated() and #userId == principal.id")
     public Mono<Void> checkout(Long userId) {
         return getActiveOrderOrNoSuchElementException(userId)
             .flatMap(cart -> orderService
@@ -99,7 +107,6 @@ public class CartServiceImpl implements CartService {
             .then();
     }
 
-    @Transactional
     private Mono<Order> getOrCreateActiveOrder(Long userId) {
         return orderRepository
             .findByUserIdAndIsActiveTrue(userId)
