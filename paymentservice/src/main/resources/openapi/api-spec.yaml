@@ -10,6 +10,11 @@ paths:
     get:
       summary: Get current balance
       parameters:
+        - name: Authorization
+          in: header
+          required: true
+          schema:
+            type: string
         - name: userId
           in: query
           required: true
@@ -27,6 +32,12 @@ paths:
                 $ref: '#/components/schemas/Balance'
     post:
       summary: Add balance
+      parameters:
+        - name: Authorization
+          in: header
+          required: true
+          schema:
+            type: string
       description: Create user balance if it does not exist and add amount in his balance
       requestBody:
         required: true
@@ -45,6 +56,12 @@ paths:
   /api/payments:
     post:
       summary: Make payment
+      parameters:
+        - name: Authorization
+          in: header
+          required: true
+          schema:
+            type: string
       requestBody:
         required: true
         content:

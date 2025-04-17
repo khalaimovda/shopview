@@ -1,12 +1,13 @@
 package com.github.khalaimovda.shopview.showcase.service;
 
-import com.github.khalaimovda.shopview.showcase.domain.AddBalanceRequest;
-import com.github.khalaimovda.shopview.showcase.exception.PaymentServiceException;
-import com.github.khalaimovda.shopview.showcase.mapper.PaymentMapper;
 import com.github.khalaimovda.shopview.showcase.api.DefaultApi;
+import com.github.khalaimovda.shopview.showcase.domain.AddBalanceRequest;
 import com.github.khalaimovda.shopview.showcase.domain.Balance;
 import com.github.khalaimovda.shopview.showcase.domain.InsufficientFundsError;
 import com.github.khalaimovda.shopview.showcase.domain.PaymentRequest;
+import com.github.khalaimovda.shopview.showcase.exception.PaymentServiceException;
+import com.github.khalaimovda.shopview.showcase.mapper.PaymentMapper;
+import com.github.khalaimovda.shopview.showcase.security.AuthorizationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -22,11 +23,14 @@ public class PaymentServiceImpl implements PaymentService {
 
     private final DefaultApi api;
     private final PaymentMapper mapper;
+    private final AuthorizationService authorizationService;
 
     @Override
     public Mono<Balance> getBalance(long userId) {
-        return api
-            .apiBalanceGet(userId)
+        return authorizationService
+            .getAccessToken()
+            .flatMap(accessToken -> api
+                .apiBalanceGet("Bearer " + accessToken, userId))
             .onErrorResume(
                 WebClientRequestException.class,
                 ex -> Mono.error(new PaymentServiceException(
@@ -41,8 +45,10 @@ public class PaymentServiceImpl implements PaymentService {
 
     @Override
     public Mono<Balance> addBalance(long userId, BigDecimal amount) {
-        return api
-            .apiBalancePost(new AddBalanceRequest().userId(userId).amount(amount))
+        return authorizationService
+            .getAccessToken()
+            .flatMap(accessToken -> api
+                .apiBalancePost("Bearer " + accessToken, new AddBalanceRequest().userId(userId).amount(amount)))
             .onErrorResume(
                 WebClientRequestException.class,
                 ex -> Mono.error(new PaymentServiceException(
@@ -58,8 +64,10 @@ public class PaymentServiceImpl implements PaymentService {
 
     @Override
     public Mono<Balance> makePayment(long userId, BigDecimal amount) {
-        return api
-            .apiPaymentsPost(new PaymentRequest().userId(userId).amount(amount))
+        return authorizationService
+            .getAccessToken()
+            .flatMap(accessToken -> api
+                .apiPaymentsPost("Bearer " + accessToken, new PaymentRequest().userId(userId).amount(amount)))
             .onErrorResume(
                 WebClientRequestException.class,
                 ex -> Mono.error(new PaymentServiceException(
