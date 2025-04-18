@@ -1,0 +1,35 @@
+{
+  "realm" : "shopview",
+  "users" : [ {
+    "id" : "94d84b8e-f947-4c62-a5e1-eb43cbbd9c73",
+    "username" : "service-account-paymentservice",
+    "emailVerified" : false,
+    "createdTimestamp" : 1744963065822,
+    "enabled" : true,
+    "totp" : false,
+    "serviceAccountClientId" : "paymentservice",
+    "credentials" : [ ],
+    "disableableCredentialTypes" : [ ],
+    "requiredActions" : [ ],
+    "realmRoles" : [ "default-roles-shopview" ],
+    "notBefore" : 0,
+    "groups" : [ ]
+  }, {
+    "id" : "b411def8-cb01-4c02-b121-818020e170aa",
+    "username" : "service-account-showcase",
+    "emailVerified" : false,
+    "createdTimestamp" : 1744963065852,
+    "enabled" : true,
+    "totp" : false,
+    "serviceAccountClientId" : "showcase",
+    "credentials" : [ ],
+    "disableableCredentialTypes" : [ ],
+    "requiredActions" : [ ],
+    "realmRoles" : [ "default-roles-shopview" ],
+    "clientRoles" : {
+      "paymentservice" : [ "write", "read" ]
+    },
+    "notBefore" : 0,
+    "groups" : [ ]
+  } ]
+}

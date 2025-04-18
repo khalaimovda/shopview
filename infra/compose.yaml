@@ -18,7 +18,7 @@ services:
     ports:
       - "6379:6379"
 
-  auth_provider:
+  auth-provider:
     image: quay.io/keycloak/keycloak:26.1.3
     depends_on:
       - db

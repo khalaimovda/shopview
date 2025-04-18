@@ -44,7 +44,7 @@
         </preConditions>
 
         <sql>
-            ALTER TABLE orders DROP CONSTRAINT IF EXISTS unique_active_order;
+            DROP INDEX IF EXISTS unique_active_order;
         </sql>
         <sql>
             <!-- One user can have only one active order -->
