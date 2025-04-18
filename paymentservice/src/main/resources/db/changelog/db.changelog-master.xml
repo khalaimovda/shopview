@@ -5,6 +5,7 @@
         xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.8.xsd">
 
+    <include file="test-users-table.xml" relativeToChangelogFile="true" context="test"/> <!-- Only for tests -->
     <include file="001-balance.xml" relativeToChangelogFile="true"/>
 
 </databaseChangeLog>
