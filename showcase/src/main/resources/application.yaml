@@ -48,7 +48,7 @@ spring:
             provider: keycloak
             authorizationGrantType: client_credentials
             client-id: showcase
-            client-secret: qWYwpcUChkjhg5n9umUJTaBlrzSQqB34
+            client-secret: 54neD5Uk3qNy9LDjF85cAljqhYyfTUCf
             scope: profile
             clientAuthenticationMethod: client_secret_post
 app:

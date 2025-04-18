@@ -23,6 +23,7 @@ spring:
       validation-query: SELECT 1
   liquibase:
     enabled: true
+    contexts: "!test"
     change-log: "classpath:/db/changelog/db.changelog-master.xml"
     database-change-log-table: paymentservice_databasechangelog
     database-change-log-lock-table: paymentservice_databasechangeloglock

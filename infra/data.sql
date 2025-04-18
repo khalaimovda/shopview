@@ -6,6 +6,14 @@ DECLARE
   is_active BOOLEAN;
 BEGIN
 
+  -- Create admin
+  INSERT INTO users(username, password, roles)
+  VALUES ('admin', '$2a$10$pY6ODS4d.d3703hEN0Gv5O0PXS0tNEEgN/TjTDiz6ZVkGUMREJvq.', '{"ADMIN"}');
+
+  -- Set balance for admin
+  INSERT INTO balance(user_id, balance)
+  SELECT id, 300.0 FROM users WHERE username = 'admin';
+
   -- Create products
   FOR counter IN 1..25 LOOP
     RAISE NOTICE 'Inserting Product %', counter;
@@ -25,7 +33,9 @@ BEGIN
     is_active := (counter = 10); -- Last order will be active
     EXECUTE
     $$
-      INSERT INTO orders(is_active) VALUES ($1) RETURNING id
+      INSERT INTO orders(is_active, user_id)
+      SELECT $1, id FROM users WHERE username = 'admin'
+      RETURNING id
     $$
     INTO order_id
     USING is_active;
